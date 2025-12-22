@@ -1,0 +1,34 @@
+{
+  "configurations": [
+    {
+      "name": "ubuntu",
+      "intelliSenseMode": "linux-gcc-x64",
+      "compilerPath": "/opt/swiftly/bin/clang",
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "includePath": [
+        "/usr/local/include/**",
+        "/usr/include/**",
+        "${workspaceFolder}/source/**",
+        "${workspaceFolder}/include/**"
+      ]
+    },
+    {
+      "name": "mac",
+      "macFrameworkPath": [
+        "/System/Library/Frameworks",
+        "/Library/Frameworks"
+      ],
+      "intelliSenseMode": "macos-clang-x64",
+      "compilerPath": "/usr/bin/clang",
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "includePath": [
+        "/opt/local/include/**",
+        "${workspaceFolder}/source/**",
+        "${workspaceFolder}/include/**"
+      ]
+    }
+  ],
+  "version": 4
+}
