@@ -12,7 +12,7 @@ class Bus {
  public:
   Bus() = default;
   ~Bus() = default;
-  void add(shared_ptr<Device>& device) { devices.push_back(device); }
+  void add(shared_ptr<Device> device) { devices.push_back(device); }
 
   uint8_t read8(uint16_t addr) {
     for (auto& device : devices) {
