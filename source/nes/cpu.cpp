@@ -7,10 +7,10 @@ void CPU::push8(uint8_t value) {
 }
 
 void CPU::push16(uint16_t value) {
-  uint8_t lo = value & 0x00ff;
-  push8(lo);
   uint8_t hi = (value & 0xff00) >> 8;
   push8(hi);
+  uint8_t lo = value & 0x00ff;
+  push8(lo);
 }
 
 uint8_t CPU::pop8() {
@@ -20,8 +20,8 @@ uint8_t CPU::pop8() {
 }
 
 uint16_t CPU::pop16() {
-  uint16_t hi = pop8();
   uint16_t lo = pop8();
+  uint16_t hi = pop8();
   return (hi << 8) | lo;
 }
 

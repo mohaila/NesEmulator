@@ -51,17 +51,13 @@ class CPU {
   CPU(shared_ptr<Bus> abus) : bus(abus) {}
   ~CPU() = default;
 
-  const CPUInfo info() const {
-    return CPUInfo{
-      a : a,
-      x : x,
-      y : y,
-      p : p,
-      sp : sp,
-      pc : pc,
-    };
-  }
+  void reset();
+  void nmi();
+  void irq();
 
+ public:  // for testing
+  // private:
+  // flags operations
   void setFlag(Flags mask) { p |= static_cast<uint8_t>(mask); }
   void clearFlag(Flags mask) { p &= ~static_cast<uint8_t>(mask); }
   bool getFlag(Flags mask) const { return p & static_cast<uint8_t>(mask); }
@@ -80,11 +76,6 @@ class CPU {
   void write8(uint8_t value);
   uint16_t getAddress();
 
-  void reset();
-  void nmi();
-  void irq();
-
- private:
   // stack operations
   void push8(uint8_t value);
   void push16(uint16_t value);
@@ -106,7 +97,6 @@ class CPU {
   void zpx();
   void zpy();
 
- private:
   shared_ptr<Bus> bus;
   uint8_t a = 0;
   uint8_t x = 0;
