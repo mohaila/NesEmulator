@@ -1,5 +1,5 @@
 set(TARGET nes-tests)
-set(SRC memory.cpp bus.cpp)
+set(SRC memory.cpp bus.cpp cpu.cpp)
 
 add_executable(${TARGET} ${SRC})
 target_include_directories(${TARGET} PRIVATE 

@@ -3,7 +3,7 @@
     {
       "name": "ubuntu",
       "intelliSenseMode": "linux-gcc-x64",
-      "compilerPath": "/opt/swiftly/bin/clang",
+      "compilerPath": "/usr/bin/clang",
       "cStandard": "c17",
       "cppStandard": "c++17",
       "includePath": [
