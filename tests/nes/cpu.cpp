@@ -133,3 +133,205 @@ TEST_F(CPUTest, Pop16) {
   auto value = cpu->pop16();
   ASSERT_EQ(value, 0xf011);
 }
+
+TEST_F(CPUTest, AbsAddressing) {
+  // arrange
+  cpu->pc = 0x02000;
+  uint8_t code[] = {0xad, 0x23, 0x45};
+  memory->set(0x02000, code, 3);
+  // act
+  cpu->abs();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Abs);
+  ASSERT_EQ(cpu->address, 0x4523);
+}
+
+TEST_F(CPUTest, AbsxAddressingNoPenality) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->x = 0xf9;
+  uint8_t code[] = {0xbd, 0x00, 0x45};
+  memory->set(0x02000, code, 3);
+  // act
+  cpu->absx();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Absx);
+  ASSERT_EQ(cpu->address, 0x45f9);
+  ASSERT_EQ(cpu->penality, false);
+}
+
+TEST_F(CPUTest, AbsxAddressingPenality) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->x = 0xf9;
+  uint8_t code[] = {0xbd, 0x07, 0x45};
+  memory->set(0x02000, code, 3);
+  // act
+  cpu->absx();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Absx);
+  ASSERT_EQ(cpu->address, 0x4600);
+  ASSERT_EQ(cpu->penality, true);
+}
+
+TEST_F(CPUTest, AbsyAddressingNoPenality) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->y = 0xf9;
+  uint8_t code[] = {0xb9, 0x00, 0x45};
+  memory->set(0x02000, code, 3);
+  // act
+  cpu->absy();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Absy);
+  ASSERT_EQ(cpu->address, 0x45f9);
+  ASSERT_EQ(cpu->penality, false);
+}
+
+TEST_F(CPUTest, AbsyAddressingPenality) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->y = 0xf9;
+  uint8_t code[] = {0xb9, 0x07, 0x45};
+  memory->set(0x02000, code, 3);
+  // act
+  cpu->absy();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Absy);
+  ASSERT_EQ(cpu->address, 0x4600);
+  ASSERT_EQ(cpu->penality, true);
+}
+
+TEST_F(CPUTest, AccAddressing) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->a = 0xf9;
+  // act
+  cpu->acc();
+  auto value = cpu->read8();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Acc);
+  ASSERT_EQ(value, cpu->a);
+}
+
+TEST_F(CPUTest, ImmAddressing) {
+  // arrange
+  cpu->pc = 0x02000;
+  uint8_t code[] = {0xa9, 0x87};
+  memory->set(0x02000, code, 2);
+  // act
+  cpu->imm();
+  auto value = cpu->read8();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imm);
+  ASSERT_EQ(cpu->address, cpu->pc + 1);
+  ASSERT_EQ(value, 0x87);
+}
+
+TEST_F(CPUTest, ImpAddressing) {
+  // arrange
+  cpu->pc = 0x02000;
+  uint8_t code[] = {0xea};
+  memory->set(0x02000, code, 1);
+  // act
+  cpu->imp();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imp);
+}
+
+TEST_F(CPUTest, IndAddressing) {
+  // arrange
+  cpu->pc = 0x02000;
+  uint8_t code[] = {0x6c, 0x12, 0x30};
+  memory->set(0x02000, code, 3);
+  uint8_t addr[] = {0x00, 0x45};
+  memory->set(0x3012, addr, 2);
+
+  // act
+  cpu->ind();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Ind);
+  ASSERT_EQ(cpu->address, 0x4500);
+}
+
+TEST_F(CPUTest, IndxAddressing) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->x = 0x45;
+  uint8_t code[] = {0x61, 0x12};
+  memory->set(0x02000, code, 2);
+  uint8_t addr[] = {0x00, 0x45};
+  memory->set(0x57, addr, 2);
+
+  // act
+  cpu->indx();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Indx);
+  ASSERT_EQ(cpu->address, 0x4500);
+}
+
+TEST_F(CPUTest, IndyAddressingNoPenality) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->y = 0x45;
+  uint8_t code[] = {0x71, 0x12};
+  memory->set(0x02000, code, 2);
+  uint8_t addr[] = {0x00, 0x45};
+  memory->set(0x12, addr, 2);
+
+  // act
+  cpu->indy();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Indy);
+  ASSERT_EQ(cpu->address, 0x4545);
+  ASSERT_EQ(cpu->penality, false);
+}
+
+TEST_F(CPUTest, IndyAddressingPenality) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->y = 0x45;
+  uint8_t code[] = {0x71, 0x12};
+  memory->set(0x02000, code, 2);
+  uint8_t addr[] = {0xf0, 0x45};
+  memory->set(0x12, addr, 2);
+
+  // act
+  cpu->indy();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Indy);
+  ASSERT_EQ(cpu->address, 0x4635);
+  ASSERT_EQ(cpu->penality, true);
+}
+
+TEST_F(CPUTest, RelAddressingPositive) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->y = 0x45;
+  uint8_t code[] = {0x30, 0x50};
+  memory->set(0x02000, code, 2);
+  uint8_t addr[] = {0xf0, 0x45};
+  memory->set(0x12, addr, 2);
+
+  // act
+  cpu->rel();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->address, cpu->pc + 0x50);
+}
+
+TEST_F(CPUTest, RelAddressingNegative) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->y = 0x45;
+  uint8_t code[] = {0x30, 0xf0};
+  memory->set(0x02000, code, 2);
+  uint8_t addr[] = {0xf0, 0x45};
+  memory->set(0x12, addr, 2);
+
+  // act
+  cpu->rel();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->address, cpu->pc + 0x100 - 0xf0);
+}

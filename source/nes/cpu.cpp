@@ -34,12 +34,12 @@ uint16_t CPU::read16bug(uint16_t addr) {
 
 void CPU::abs() {
   addressing = Addressing::Abs;
-  address = bus->read16(pc);
+  address = bus->read16(pc + 1);
 }
 
 void CPU::absx() {
   addressing = Addressing::Absx;
-  address = bus->read16(pc);
+  address = bus->read16(pc + 1);
   auto page = address & 0xff00;
   address += x;
   penality = page != (address & 0xff00);
@@ -47,7 +47,7 @@ void CPU::absx() {
 
 void CPU::absy() {
   addressing = Addressing::Absy;
-  address = bus->read16(pc);
+  address = bus->read16(pc + 1);
   auto page = address & 0xff00;
   address += y;
   penality = page != (address & 0xff00);
@@ -55,25 +55,28 @@ void CPU::absy() {
 
 void CPU::acc() { addressing = Addressing::Acc; }
 
-void CPU::imm() { addressing = Addressing::Imm; }
+void CPU::imm() {
+  addressing = Addressing::Imm;
+  address = pc + 1;
+}
 
 void CPU::imp() { addressing = Addressing::Imp; }
 
 void CPU::ind() {
   addressing = Addressing::Ind;
-  auto ptr = bus->read16(pc);
+  auto ptr = bus->read16(pc + 1);
   address = read16bug(ptr);
 }
 
 void CPU::indx() {
   addressing = Addressing::Indx;
-  uint16_t ptr = uint16_t(bus->read8(pc)) + x;
+  uint16_t ptr = uint16_t(bus->read8(pc + 1)) + x;
   address = read16bug(ptr);
 }
 
 void CPU::indy() {
   addressing = Addressing::Indy;
-  auto ptr = bus->read16(pc);
+  auto ptr = bus->read8(pc + 1);
   address = read16bug(ptr);
   auto page = address & 0xff00;
   address += y;
@@ -82,7 +85,7 @@ void CPU::indy() {
 
 void CPU::rel() {
   addressing = Addressing::Rel;
-  auto offset = bus->read8(pc);
+  auto offset = bus->read8(pc + 1);
   if (offset < 0x80) {
     address = pc + offset;
   } else {
@@ -92,17 +95,17 @@ void CPU::rel() {
 
 void CPU::zp() {
   addressing = Addressing::Zp;
-  address = bus->read8(pc);
+  address = bus->read8(pc + 1);
 }
 
 void CPU::zpx() {
   addressing = Addressing::Zpx;
-  address = (bus->read8(pc) + x) & 0x00ff;
+  address = (bus->read8(pc + 1) + x) & 0x00ff;
 }
 
 void CPU::zpy() {
   addressing = Addressing::Zpy;
-  address = (bus->read8(pc) + y) & 0x00ff;
+  address = (bus->read8(pc + 1) + y) & 0x00ff;
 }
 
 uint8_t CPU::read8() {
@@ -110,7 +113,6 @@ uint8_t CPU::read8() {
     case Addressing::Acc:
       return a;
     case Addressing::Imm:
-      return bus->read8(pc);
     case Addressing::Abs:
     case Addressing::Absx:
     case Addressing::Absy:
