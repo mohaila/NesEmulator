@@ -381,6 +381,49 @@ void CPU::setOpcodesInfo() {
   opcodes[0x40] = OpcodeInfo{"RTI", &CPU::imp, &CPU::RTI, 1, 6, false};
   // RTS
   opcodes[0x60] = OpcodeInfo{"RTS", &CPU::imp, &CPU::RTS, 1, 6, false};
+  // SBC
+  opcodes[0xe9] = OpcodeInfo{"SBC", &CPU::imm, &CPU::SBC, 2, 2, false};
+  opcodes[0xe5] = OpcodeInfo{"SBC", &CPU::zp, &CPU::SBC, 2, 3, false};
+  opcodes[0xf5] = OpcodeInfo{"SBC", &CPU::zpx, &CPU::SBC, 2, 4, false};
+  opcodes[0xed] = OpcodeInfo{"SBC", &CPU::abs, &CPU::SBC, 3, 4, false};
+  opcodes[0xfd] = OpcodeInfo{"SBC", &CPU::absx, &CPU::SBC, 3, 4, true};
+  opcodes[0xf9] = OpcodeInfo{"SBC", &CPU::absy, &CPU::SBC, 3, 4, true};
+  opcodes[0xe1] = OpcodeInfo{"SBC", &CPU::indx, &CPU::SBC, 2, 6, false};
+  opcodes[0xf1] = OpcodeInfo{"SBC", &CPU::indy, &CPU::SBC, 2, 5, true};
+  // SEC
+  opcodes[0x38] = OpcodeInfo{"SEC", &CPU::imp, &CPU::SEC, 1, 2, false};
+  // SED
+  opcodes[0xf8] = OpcodeInfo{"SED", &CPU::imp, &CPU::SED, 1, 2, false};
+  // SEI
+  opcodes[0x78] = OpcodeInfo{"SEI", &CPU::imp, &CPU::SEI, 1, 2, false};
+  // STA
+  opcodes[0x85] = OpcodeInfo{"STA", &CPU::zp, &CPU::STA, 2, 3, false};
+  opcodes[0x95] = OpcodeInfo{"STA", &CPU::zpx, &CPU::STA, 2, 4, false};
+  opcodes[0x8d] = OpcodeInfo{"STA", &CPU::abs, &CPU::STA, 3, 4, false};
+  opcodes[0x9d] = OpcodeInfo{"STA", &CPU::absx, &CPU::STA, 3, 5, false};
+  opcodes[0x99] = OpcodeInfo{"STA", &CPU::absy, &CPU::STA, 3, 5, false};
+  opcodes[0x81] = OpcodeInfo{"STA", &CPU::indx, &CPU::STA, 2, 6, false};
+  opcodes[0x91] = OpcodeInfo{"STA", &CPU::indy, &CPU::STA, 2, 6, false};
+  // STX
+  opcodes[0x86] = OpcodeInfo{"STX", &CPU::zp, &CPU::STX, 2, 3, false};
+  opcodes[0x96] = OpcodeInfo{"STX", &CPU::zpx, &CPU::STX, 2, 4, false};
+  opcodes[0x8e] = OpcodeInfo{"STX", &CPU::abs, &CPU::STX, 3, 4, false};
+  // STY
+  opcodes[0x84] = OpcodeInfo{"STY", &CPU::zp, &CPU::STY, 2, 3, false};
+  opcodes[0x94] = OpcodeInfo{"STY", &CPU::zpx, &CPU::STY, 2, 4, false};
+  opcodes[0x8c] = OpcodeInfo{"STY", &CPU::abs, &CPU::STY, 3, 4, false};
+  // TAX
+  opcodes[0xaa] = OpcodeInfo{"TAX", &CPU::imp, &CPU::TAX, 1, 2, false};
+  // TAY
+  opcodes[0xa8] = OpcodeInfo{"TAY", &CPU::imp, &CPU::TAY, 1, 2, false};
+  // TSX
+  opcodes[0xba] = OpcodeInfo{"TSX", &CPU::imp, &CPU::TSX, 1, 2, false};
+  // TXA
+  opcodes[0x8a] = OpcodeInfo{"TXA", &CPU::imp, &CPU::TXA, 1, 2, false};
+  // TXS
+  opcodes[0x9a] = OpcodeInfo{"TXS", &CPU::imp, &CPU::TXS, 1, 2, false};
+  // TYA
+  opcodes[0x98] = OpcodeInfo{"TYA", &CPU::imp, &CPU::TYA, 1, 2, false};
 }
 
 void CPU::branch(bool condition) {
@@ -404,9 +447,8 @@ void CPU::compare(uint8_t r) {
   }
 }
 
-void CPU::ADC() {
+void CPU::adc(uint8_t value) {
   uint16_t c = getFlag(Flags::C) ? 1 : 0;
-  uint16_t value = read8();
   uint16_t sum = uint16_t(a) + value + c;
   setFlag(Flags::C, sum > 0x00ff);
   uint8_t result = sum & 0x00ff;
@@ -416,6 +458,11 @@ void CPU::ADC() {
   if (opcodeInfo.penality && penality) {
     cycles += 1;
   }
+}
+
+void CPU::ADC() {
+  uint16_t value = read8();
+  adc(value);
 }
 
 void CPU::AND() {
@@ -597,3 +644,47 @@ void CPU::RTI() {
 }
 
 void CPU::RTS() { pc = pop16(); }
+
+void CPU::SBC() {
+  uint8_t value = ~read8();
+  adc(value);
+}
+
+void CPU::SEC() { setFlag(Flags::C, true); }
+
+void CPU::SED() { setFlag(Flags::D, true); }
+
+void CPU::SEI() { setFlag(Flags::I, true); }
+
+void CPU::STA() { write8(a); }
+
+void CPU::STX() { write8(x); }
+
+void CPU::STY() { write8(y); }
+
+void CPU::TAX() {
+  x = a;
+  setZN(a);
+}
+
+void CPU::TAY() {
+  y = a;
+  setZN(a);
+}
+
+void CPU::TSX() {
+  x = sp;
+  setZN(x);
+}
+
+void CPU::TXA() {
+  a = x;
+  setZN(a);
+}
+
+void CPU::TXS() { sp = x; }
+
+void CPU::TYA() {
+  a = y;
+  setZN(a);
+}

@@ -106,6 +106,7 @@ class CPU {
   void setOpcodesInfo();
   void branch(bool condition);
   void compare(uint8_t r);
+  void adc(uint8_t value);
   void ADC();
   void AND();
   void ASL();
@@ -149,6 +150,19 @@ class CPU {
   void ROR();
   void RTI();
   void RTS();
+  void SBC();
+  void SEC();
+  void SED();
+  void SEI();
+  void STA();
+  void STX();
+  void STY();
+  void TAX();
+  void TAY();
+  void TSX();
+  void TXA();
+  void TXS();
+  void TYA();
 
   shared_ptr<Bus> bus;
   uint8_t a = 0;
