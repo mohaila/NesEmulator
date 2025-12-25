@@ -262,6 +262,40 @@ void CPU::setOpcodesInfo() {
   opcodes[0x50] = OpcodeInfo{"BVC", &CPU::rel, &CPU::BVC, 2, 2, true};
   // BVS
   opcodes[0x70] = OpcodeInfo{"BVS", &CPU::rel, &CPU::BVS, 2, 2, true};
+  // CLC
+  opcodes[0x18] = OpcodeInfo{"CLC", &CPU::imp, &CPU::CLC, 1, 2, false};
+  // CLD
+  opcodes[0xd8] = OpcodeInfo{"CLD", &CPU::imp, &CPU::CLD, 1, 2, false};
+  // CLI
+  opcodes[0x58] = OpcodeInfo{"CLI", &CPU::imp, &CPU::CLI, 1, 2, false};
+  // CLV
+  opcodes[0xb8] = OpcodeInfo{"CLV", &CPU::imp, &CPU::CLV, 1, 2, false};
+  // CMP
+  opcodes[0xc9] = OpcodeInfo{"CMP", &CPU::imm, &CPU::CMP, 2, 2, false};
+  opcodes[0xc5] = OpcodeInfo{"CMP", &CPU::zp, &CPU::CMP, 2, 3, false};
+  opcodes[0xd5] = OpcodeInfo{"CMP", &CPU::zpx, &CPU::CMP, 2, 4, false};
+  opcodes[0xcd] = OpcodeInfo{"CMP", &CPU::abs, &CPU::CMP, 3, 4, false};
+  opcodes[0xdd] = OpcodeInfo{"CMP", &CPU::absx, &CPU::CMP, 3, 4, true};
+  opcodes[0xd9] = OpcodeInfo{"CMP", &CPU::absy, &CPU::CMP, 3, 4, true};
+  opcodes[0xc1] = OpcodeInfo{"CMP", &CPU::indx, &CPU::CMP, 2, 6, false};
+  opcodes[0xd1] = OpcodeInfo{"CMP", &CPU::indy, &CPU::CMP, 2, 5, true};
+  // CPX
+  opcodes[0xe0] = OpcodeInfo{"CPX", &CPU::imm, &CPU::CPX, 2, 2, false};
+  opcodes[0xe4] = OpcodeInfo{"CPX", &CPU::zp, &CPU::CPX, 2, 3, false};
+  opcodes[0xec] = OpcodeInfo{"CPX", &CPU::abs, &CPU::CPX, 3, 4, false};
+  // CPX
+  opcodes[0xc0] = OpcodeInfo{"CPY", &CPU::imm, &CPU::CPY, 2, 2, false};
+  opcodes[0xc4] = OpcodeInfo{"CPY", &CPU::zp, &CPU::CPY, 2, 3, false};
+  opcodes[0xcc] = OpcodeInfo{"CPY", &CPU::abs, &CPU::CPY, 3, 4, false};
+  // DEC
+  opcodes[0xc6] = OpcodeInfo{"DEC", &CPU::zp, &CPU::DEC, 2, 5, false};
+  opcodes[0xd6] = OpcodeInfo{"DEC", &CPU::zpx, &CPU::DEC, 2, 6, false};
+  opcodes[0xce] = OpcodeInfo{"DEC", &CPU::abs, &CPU::DEC, 3, 6, false};
+  opcodes[0xde] = OpcodeInfo{"DEC", &CPU::absx, &CPU::DEC, 3, 7, true};
+  // DEX
+  opcodes[0xca] = OpcodeInfo{"DEX", &CPU::imp, &CPU::DEX, 1, 2, false};
+  // DEY
+  opcodes[0x88] = OpcodeInfo{"DEY", &CPU::imp, &CPU::DEY, 1, 2, false};
 }
 
 void CPU::branch(bool condition) {
@@ -273,6 +307,13 @@ void CPU::branch(bool condition) {
       cycles++;
     }
   }
+}
+
+void CPU::compare(uint8_t r) {
+  auto value = read8();
+  setFlag(Flags::C, r >= value);
+  setFlag(Flags::Z, r == value);
+  setFlag(Flags::N, ((r - value) & 0x80) != 0);
 }
 
 void CPU::ADC() {
@@ -337,3 +378,33 @@ void CPU::BRK() {
 void CPU::BVC() { branch(!getFlag(Flags::V)); }
 
 void CPU::BVS() { branch(getFlag(Flags::V)); }
+
+void CPU::CLC() { clearFlag(Flags::C); }
+
+void CPU::CLD() { clearFlag(Flags::D); }
+
+void CPU::CLI() { clearFlag(Flags::I); }
+
+void CPU::CLV() { clearFlag(Flags::V); }
+
+void CPU::CMP() { compare(a); }
+
+void CPU::CPX() { compare(x); }
+
+void CPU::CPY() { compare(y); }
+
+void CPU::DEC() {
+  auto value = read8() - 1;
+  setZN(value);
+  write8(value);
+}
+
+void CPU::DEX() {
+  x--;
+  setZN(x);
+}
+
+void CPU::DEY() {
+  y--;
+  setZN(y);
+}

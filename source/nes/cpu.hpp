@@ -105,6 +105,7 @@ class CPU {
   // instructions
   void setOpcodesInfo();
   void branch(bool condition);
+  void compare(uint8_t r);
   void ADC();
   void AND();
   void ASL();
@@ -118,6 +119,16 @@ class CPU {
   void BRK();
   void BVC();
   void BVS();
+  void CLC();
+  void CLD();
+  void CLI();
+  void CLV();
+  void CMP();
+  void CPX();
+  void CPY();
+  void DEC();
+  void DEX();
+  void DEY();
 
   shared_ptr<Bus> bus;
   uint8_t a = 0;

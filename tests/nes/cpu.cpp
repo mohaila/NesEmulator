@@ -741,3 +741,174 @@ TEST_F(CPUTest, BvsSuccess) {
   ASSERT_EQ(cpu->addressing, Addressing::Rel);
   ASSERT_EQ(cpu->pc, 0x02042);
 }
+
+TEST_F(CPUTest, ClcSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::C, true);
+  uint8_t code[] = {0x18};
+  memory->set(0x02000, code, 1);
+  auto c = cpu->getFlag(Flags::C);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imp);
+  ASSERT_EQ(cpu->pc, 0x02001);
+  ASSERT_EQ(c, true);
+  ASSERT_EQ(cpu->getFlag(Flags::C), false);
+}
+
+TEST_F(CPUTest, CldSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::D, true);
+  uint8_t code[] = {0xd8};
+  memory->set(0x02000, code, 1);
+  auto d = cpu->getFlag(Flags::D);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imp);
+  ASSERT_EQ(cpu->pc, 0x02001);
+  ASSERT_EQ(d, true);
+  ASSERT_EQ(cpu->getFlag(Flags::D), false);
+}
+
+TEST_F(CPUTest, CliSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::I, true);
+  uint8_t code[] = {0x58};
+  memory->set(0x02000, code, 1);
+  auto i = cpu->getFlag(Flags::I);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imp);
+  ASSERT_EQ(cpu->pc, 0x02001);
+  ASSERT_EQ(i, true);
+  ASSERT_EQ(cpu->getFlag(Flags::I), false);
+}
+
+TEST_F(CPUTest, ClvSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::V, true);
+  uint8_t code[] = {0xb8};
+  memory->set(0x02000, code, 1);
+  auto v = cpu->getFlag(Flags::V);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imp);
+  ASSERT_EQ(cpu->pc, 0x02001);
+  ASSERT_EQ(v, true);
+  ASSERT_EQ(cpu->getFlag(Flags::V), false);
+}
+
+TEST_F(CPUTest, CmpImmZeroCarry) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->a = 0xf0;
+  uint8_t code[] = {0xc9, 0xf0};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imm);
+  ASSERT_EQ(cpu->pc, 0x02002);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), true);
+  ASSERT_EQ(cpu->getFlag(Flags::N), false);
+  ASSERT_EQ(cpu->getFlag(Flags::C), true);
+}
+
+TEST_F(CPUTest, CpxImmNegative) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->x = 0x00;
+  uint8_t code[] = {0xe0, 0x30};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imm);
+  ASSERT_EQ(cpu->pc, 0x02002);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), false);
+  ASSERT_EQ(cpu->getFlag(Flags::N), true);
+  ASSERT_EQ(cpu->getFlag(Flags::C), false);
+}
+
+TEST_F(CPUTest, CpyImmCarryNegative) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->y = 0xf0;
+  uint8_t code[] = {0xc0, 0x30};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imm);
+  ASSERT_EQ(cpu->pc, 0x02002);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), false);
+  ASSERT_EQ(cpu->getFlag(Flags::N), true);
+  ASSERT_EQ(cpu->getFlag(Flags::C), true);
+}
+
+TEST_F(CPUTest, DecZpNegative) {
+  // arrange
+  cpu->pc = 0x02000;
+  uint8_t code[] = {0xc6, 0x30};
+  memory->set(0x02000, code, 2);
+  uint8_t data[] = {0x00};
+  memory->set(0x0030, data, 1);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Zp);
+  ASSERT_EQ(cpu->pc, 0x02002);
+  ASSERT_EQ(memory->read8(0x0030), 0xff);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), false);
+  ASSERT_EQ(cpu->getFlag(Flags::N), true);
+}
+
+TEST_F(CPUTest, DexZero) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->x = 0x01;
+  uint8_t code[] = {0xca};
+  memory->set(0x02000, code, 1);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imp);
+  ASSERT_EQ(cpu->pc, 0x02001);
+  ASSERT_EQ(cpu->x, 0x00);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), true);
+  ASSERT_EQ(cpu->getFlag(Flags::N), false);
+}
+
+TEST_F(CPUTest, DeySuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->y = 0x80;
+  uint8_t code[] = {0x88};
+  memory->set(0x02000, code, 1);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imp);
+  ASSERT_EQ(cpu->pc, 0x02001);
+  ASSERT_EQ(cpu->y, 0x7f);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), false);
+  ASSERT_EQ(cpu->getFlag(Flags::N), false);
+}
