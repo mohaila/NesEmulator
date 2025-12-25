@@ -1166,3 +1166,108 @@ TEST_F(CPUTest, PlpSucces) {
   ASSERT_EQ(cpu->pc, 0x2001);
   ASSERT_EQ(cpu->p, 0xa3);
 }
+
+TEST_F(CPUTest, RolAccWithCarry) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->a = 0x40;
+  cpu->setFlag(Flags::C);
+  uint8_t code[] = {0x2a};
+  memory->set(0x02000, code, 1);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Acc);
+  ASSERT_EQ(cpu->pc, 0x2001);
+  ASSERT_EQ(cpu->a, 0x81);
+  ASSERT_EQ(cpu->getFlag(Flags::N), true);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), false);
+  ASSERT_EQ(cpu->getFlag(Flags::C), false);
+}
+
+TEST_F(CPUTest, RolAccWithoutCarry) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->a = 0x80;
+  uint8_t code[] = {0x2a};
+  memory->set(0x02000, code, 1);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Acc);
+  ASSERT_EQ(cpu->pc, 0x2001);
+  ASSERT_EQ(cpu->a, 0x00);
+  ASSERT_EQ(cpu->getFlag(Flags::N), false);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), true);
+  ASSERT_EQ(cpu->getFlag(Flags::C), true);
+}
+
+TEST_F(CPUTest, RorAccWithCarry) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->a = 0x40;
+  cpu->setFlag(Flags::C);
+  uint8_t code[] = {0x6a};
+  memory->set(0x02000, code, 1);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Acc);
+  ASSERT_EQ(cpu->pc, 0x2001);
+  ASSERT_EQ(cpu->a, 0xa0);
+  ASSERT_EQ(cpu->getFlag(Flags::N), true);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), false);
+  ASSERT_EQ(cpu->getFlag(Flags::C), false);
+}
+
+TEST_F(CPUTest, RorAccWithoutCarry) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->a = 0x01;
+  uint8_t code[] = {0x6a};
+  memory->set(0x02000, code, 1);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Acc);
+  ASSERT_EQ(cpu->pc, 0x2001);
+  ASSERT_EQ(cpu->a, 0x00);
+  ASSERT_EQ(cpu->getFlag(Flags::N), false);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), true);
+  ASSERT_EQ(cpu->getFlag(Flags::C), true);
+}
+
+TEST_F(CPUTest, RtiSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  uint8_t code[] = {0x40};
+  memory->set(0x02000, code, 1);
+  cpu->push16(0x4060);
+  uint8_t p = 0xe5;
+  cpu->push8(p);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imp);
+  ASSERT_EQ(cpu->pc, 0x4060);
+  ASSERT_EQ(cpu->p, p & 0xef | 0x20);
+}
+
+TEST_F(CPUTest, RtsSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  uint8_t code[] = {0x60};
+  memory->set(0x02000, code, 1);
+  cpu->push16(0x4060);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imp);
+  ASSERT_EQ(cpu->pc, 0x4060);
+}

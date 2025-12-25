@@ -145,6 +145,10 @@ class CPU {
   void PHP();
   void PLA();
   void PLP();
+  void ROL();
+  void ROR();
+  void RTI();
+  void RTS();
 
   shared_ptr<Bus> bus;
   uint8_t a = 0;

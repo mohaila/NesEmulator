@@ -365,6 +365,22 @@ void CPU::setOpcodesInfo() {
   opcodes[0x68] = OpcodeInfo{"PLA", &CPU::imp, &CPU::PLA, 1, 4, false};
   // PLP
   opcodes[0x28] = OpcodeInfo{"PLP", &CPU::imp, &CPU::PLP, 1, 4, false};
+  // ROL
+  opcodes[0x2a] = OpcodeInfo{"ROL", &CPU::acc, &CPU::ROL, 1, 2, false};
+  opcodes[0x26] = OpcodeInfo{"ROL", &CPU::zp, &CPU::ROL, 2, 5, false};
+  opcodes[0x36] = OpcodeInfo{"ROL", &CPU::zpx, &CPU::ROL, 2, 6, false};
+  opcodes[0x2e] = OpcodeInfo{"ROL", &CPU::abs, &CPU::ROL, 3, 6, false};
+  opcodes[0x3e] = OpcodeInfo{"ROL", &CPU::absx, &CPU::ROL, 3, 7, false};
+  // ROR
+  opcodes[0x6a] = OpcodeInfo{"ROR", &CPU::acc, &CPU::ROR, 1, 2, false};
+  opcodes[0x66] = OpcodeInfo{"ROR", &CPU::zp, &CPU::ROR, 2, 5, false};
+  opcodes[0x76] = OpcodeInfo{"ROR", &CPU::zpx, &CPU::ROR, 2, 6, false};
+  opcodes[0x6e] = OpcodeInfo{"ROR", &CPU::abs, &CPU::ROR, 3, 6, false};
+  opcodes[0x7e] = OpcodeInfo{"ROR", &CPU::absx, &CPU::ROR, 3, 7, false};
+  // RTI
+  opcodes[0x40] = OpcodeInfo{"RTI", &CPU::imp, &CPU::RTI, 1, 6, false};
+  // RTS
+  opcodes[0x60] = OpcodeInfo{"RTS", &CPU::imp, &CPU::RTS, 1, 6, false};
 }
 
 void CPU::branch(bool condition) {
@@ -556,3 +572,28 @@ void CPU::PLA() {
 }
 
 void CPU::PLP() { p = pop8() & 0xef | 0x20; }
+
+void CPU::ROL() {
+  auto value = read8();
+  uint8_t c = getFlag(Flags::C) ? 0x01 : 0x00;
+  setFlag(Flags::C, (value & 0x80) != 0);
+  value = (value << 1) | c;
+  setZN(value);
+  write8(value);
+}
+
+void CPU::ROR() {
+  auto value = read8();
+  uint8_t c = getFlag(Flags::C) ? 0x01 : 0x00;
+  setFlag(Flags::C, (value & 0x01) != 0);
+  value = (c << 7) | (value >> 1);
+  setZN(value);
+  write8(value);
+}
+
+void CPU::RTI() {
+  p = pop8() & 0xef | 0x20;
+  pc = pop16();
+}
+
+void CPU::RTS() { pc = pop16(); }
