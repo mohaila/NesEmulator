@@ -536,6 +536,34 @@ TEST_F(CPUTest, BcsSuccess) {
   ASSERT_EQ(cpu->pc, 0x02042);
 }
 
+TEST_F(CPUTest, BeqFailure) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::Z, false);
+  uint8_t code[] = {0xf0, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02002);
+}
+
+TEST_F(CPUTest, BeqSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::Z, true);
+  uint8_t code[] = {0xf0, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02042);
+}
+
 TEST_F(CPUTest, BitZp) {
   // arrange
   cpu->pc = 0x02000;
@@ -630,6 +658,81 @@ TEST_F(CPUTest, BplSuccess) {
   cpu->pc = 0x02000;
   cpu->setFlag(Flags::N, false);
   uint8_t code[] = {0x10, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02042);
+}
+
+TEST_F(CPUTest, BrkSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  uint8_t code[] = {0x00, 0x40};
+  memory->set(0x02000, code, 2);
+  bus->write16(IRQ_PROC_ADDR, 0x2345);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imm);
+  ASSERT_EQ(cpu->pc, 0x2345);
+  ASSERT_EQ(cpu->getFlag(Flags::I), true);
+  auto status = cpu->pop8();
+  ASSERT_EQ((status & 0x10) != 0, true);
+  ASSERT_EQ((status & 0x20) != 0, true);
+  ASSERT_EQ(cpu->pop16(), 0x2002);
+}
+
+TEST_F(CPUTest, BvcFailure) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::V, true);
+  uint8_t code[] = {0x50, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02002);
+}
+
+TEST_F(CPUTest, BvcSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::V, false);
+  uint8_t code[] = {0x50, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02042);
+}
+
+TEST_F(CPUTest, BvsFailure) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::V, false);
+  uint8_t code[] = {0x70, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02002);
+}
+
+TEST_F(CPUTest, BvsSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::V, true);
+  uint8_t code[] = {0x70, 0x40};
   memory->set(0x02000, code, 2);
 
   // act

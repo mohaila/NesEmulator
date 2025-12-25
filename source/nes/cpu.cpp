@@ -256,6 +256,12 @@ void CPU::setOpcodesInfo() {
   opcodes[0xd0] = OpcodeInfo{"BNE", &CPU::rel, &CPU::BNE, 2, 2, true};
   // BPL
   opcodes[0x10] = OpcodeInfo{"BPL", &CPU::rel, &CPU::BPL, 2, 2, true};
+  // BRK
+  opcodes[0x00] = OpcodeInfo{"BRK", &CPU::imm, &CPU::BRK, 2, 7, false};
+  // BVC
+  opcodes[0x50] = OpcodeInfo{"BVC", &CPU::rel, &CPU::BVC, 2, 2, true};
+  // BVS
+  opcodes[0x70] = OpcodeInfo{"BVS", &CPU::rel, &CPU::BVS, 2, 2, true};
 }
 
 void CPU::branch(bool condition) {
@@ -318,3 +324,16 @@ void CPU::BMI() { branch(getFlag(Flags::N)); }
 void CPU::BNE() { branch(!getFlag(Flags::Z)); }
 
 void CPU::BPL() { branch(!getFlag(Flags::N)); }
+
+void CPU::BRK() {
+  push16(pc);
+  pc = bus->read16(IRQ_PROC_ADDR);
+  auto status =
+      p | static_cast<uint8_t>(Flags::B) | static_cast<uint8_t>(Flags::U);
+  push8(status);
+  setFlag(Flags::I);
+}
+
+void CPU::BVC() { branch(!getFlag(Flags::V)); }
+
+void CPU::BVS() { branch(getFlag(Flags::V)); }

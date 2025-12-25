@@ -115,6 +115,9 @@ class CPU {
   void BMI();
   void BNE();
   void BPL();
+  void BRK();
+  void BVC();
+  void BVS();
 
   shared_ptr<Bus> bus;
   uint8_t a = 0;

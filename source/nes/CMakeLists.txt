@@ -15,6 +15,6 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 if(ENABLE_COVERAGE)
-    target_compile_options(${TARGET} PRIVATE -O0 -coverage -fno-exceptions -fno-inline)
+    target_compile_options(${TARGET} PRIVATE -O0 -coverage -fno-inline)
     target_link_options(${TARGET} PRIVATE -coverage)
 endif()
