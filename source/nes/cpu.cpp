@@ -296,6 +296,50 @@ void CPU::setOpcodesInfo() {
   opcodes[0xca] = OpcodeInfo{"DEX", &CPU::imp, &CPU::DEX, 1, 2, false};
   // DEY
   opcodes[0x88] = OpcodeInfo{"DEY", &CPU::imp, &CPU::DEY, 1, 2, false};
+  // EOR
+  opcodes[0x49] = OpcodeInfo{"EOR", &CPU::imm, &CPU::EOR, 2, 2, false};
+  opcodes[0x45] = OpcodeInfo{"EOR", &CPU::zp, &CPU::EOR, 2, 3, false};
+  opcodes[0x55] = OpcodeInfo{"EOR", &CPU::zpx, &CPU::EOR, 2, 4, false};
+  opcodes[0x4d] = OpcodeInfo{"EOR", &CPU::abs, &CPU::EOR, 3, 4, false};
+  opcodes[0x5d] = OpcodeInfo{"EOR", &CPU::absx, &CPU::EOR, 3, 4, true};
+  opcodes[0x59] = OpcodeInfo{"EOR", &CPU::absy, &CPU::EOR, 3, 4, true};
+  opcodes[0x41] = OpcodeInfo{"EOR", &CPU::indx, &CPU::EOR, 2, 6, false};
+  opcodes[0x51] = OpcodeInfo{"EOR", &CPU::indy, &CPU::EOR, 2, 5, true};
+  // INC
+  opcodes[0xe6] = OpcodeInfo{"INC", &CPU::zp, &CPU::INC, 2, 5, false};
+  opcodes[0xf6] = OpcodeInfo{"INC", &CPU::zpx, &CPU::INC, 2, 6, false};
+  opcodes[0xee] = OpcodeInfo{"INC", &CPU::abs, &CPU::INC, 3, 6, false};
+  opcodes[0xfe] = OpcodeInfo{"INC", &CPU::absx, &CPU::INC, 3, 7, true};
+  // INX
+  opcodes[0xe8] = OpcodeInfo{"INX", &CPU::imp, &CPU::INX, 1, 2, false};
+  // INY
+  opcodes[0xc8] = OpcodeInfo{"INY", &CPU::imp, &CPU::INY, 1, 2, false};
+  // JMP
+  opcodes[0x4c] = OpcodeInfo{"JMP", &CPU::abs, &CPU::JMP, 3, 3, false};
+  opcodes[0x6c] = OpcodeInfo{"JMP", &CPU::ind, &CPU::JMP, 3, 5, false};
+  // JSR
+  opcodes[0x20] = OpcodeInfo{"JSR", &CPU::abs, &CPU::JSR, 3, 6, false};
+  // LDA
+  opcodes[0xa9] = OpcodeInfo{"LDA", &CPU::imm, &CPU::LDA, 2, 2, false};
+  opcodes[0xa5] = OpcodeInfo{"LDA", &CPU::zp, &CPU::LDA, 2, 3, false};
+  opcodes[0xb5] = OpcodeInfo{"LDA", &CPU::zpx, &CPU::LDA, 2, 4, false};
+  opcodes[0xad] = OpcodeInfo{"LDA", &CPU::abs, &CPU::LDA, 3, 4, false};
+  opcodes[0xbd] = OpcodeInfo{"LDA", &CPU::absx, &CPU::LDA, 3, 4, true};
+  opcodes[0xb9] = OpcodeInfo{"LDA", &CPU::absy, &CPU::LDA, 3, 4, true};
+  opcodes[0xa1] = OpcodeInfo{"LDA", &CPU::indx, &CPU::LDA, 2, 6, false};
+  opcodes[0xb1] = OpcodeInfo{"LDA", &CPU::indy, &CPU::LDA, 2, 5, true};
+  // LDX
+  opcodes[0xa2] = OpcodeInfo{"LDX", &CPU::imm, &CPU::LDX, 2, 2, false};
+  opcodes[0xa6] = OpcodeInfo{"LDX", &CPU::zp, &CPU::LDX, 2, 3, false};
+  opcodes[0xb6] = OpcodeInfo{"LDX", &CPU::zpy, &CPU::LDX, 2, 4, false};
+  opcodes[0xae] = OpcodeInfo{"LDX", &CPU::abs, &CPU::LDX, 3, 4, false};
+  opcodes[0xbe] = OpcodeInfo{"LDX", &CPU::absy, &CPU::LDX, 3, 4, true};
+  // LDY
+  opcodes[0xa0] = OpcodeInfo{"LDY", &CPU::imm, &CPU::LDY, 2, 2, false};
+  opcodes[0xa4] = OpcodeInfo{"LDY", &CPU::zp, &CPU::LDY, 2, 3, false};
+  opcodes[0xb4] = OpcodeInfo{"LDY", &CPU::zpx, &CPU::LDY, 2, 4, false};
+  opcodes[0xac] = OpcodeInfo{"LDY", &CPU::abs, &CPU::LDY, 3, 4, false};
+  opcodes[0xbc] = OpcodeInfo{"LDY", &CPU::absx, &CPU::LDY, 3, 4, true};
 }
 
 void CPU::branch(bool condition) {
@@ -314,6 +358,9 @@ void CPU::compare(uint8_t r) {
   setFlag(Flags::C, r >= value);
   setFlag(Flags::Z, r == value);
   setFlag(Flags::N, ((r - value) & 0x80) != 0);
+  if (opcodeInfo.penality && penality) {
+    cycles++;
+  }
 }
 
 void CPU::ADC() {
@@ -406,5 +453,51 @@ void CPU::DEX() {
 
 void CPU::DEY() {
   y--;
+  setZN(y);
+}
+
+void CPU::EOR() {
+  a ^= read8();
+  setZN(a);
+  if (opcodeInfo.penality && penality) {
+    cycles++;
+  }
+}
+
+void CPU::INC() {
+  auto value = read8() + 1;
+  setZN(value);
+  write8(value);
+}
+
+void CPU::INX() {
+  x++;
+  setZN(x);
+}
+
+void CPU::INY() {
+  y++;
+  setZN(y);
+}
+
+void CPU::JMP() { pc = address; }
+
+void CPU::JSR() {
+  push16(pc);
+  pc = address;
+}
+
+void CPU::LDA() {
+  a = read8();
+  setZN(a);
+}
+
+void CPU::LDX() {
+  x = read8();
+  setZN(x);
+}
+
+void CPU::LDY() {
+  y = read8();
   setZN(y);
 }

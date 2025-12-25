@@ -129,6 +129,15 @@ class CPU {
   void DEC();
   void DEX();
   void DEY();
+  void EOR();
+  void INC();
+  void INX();
+  void INY();
+  void JMP();
+  void JSR();
+  void LDA();
+  void LDX();
+  void LDY();
 
   shared_ptr<Bus> bus;
   uint8_t a = 0;
