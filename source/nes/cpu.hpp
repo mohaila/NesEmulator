@@ -2,6 +2,9 @@
 
 #include "bus.hpp"
 
+using std::string;
+using std::unordered_map;
+
 #define STACK_PAGE 0x0100
 #define NMI_PROC_ADDR 0xfffa
 #define RESET_PROC_ADDR 0xfffc
@@ -16,15 +19,6 @@ enum class Flags : uint8_t {
   U = 0x20,
   V = 0x40,
   N = 0x80,
-};
-
-struct CPUInfo {
-  uint8_t a;
-  uint8_t x;
-  uint8_t y;
-  uint8_t p;
-  uint8_t sp;
-  uint16_t pc;
 };
 
 enum class Addressing : uint8_t {
@@ -43,17 +37,29 @@ enum class Addressing : uint8_t {
   Zpy,   // Zero page indexed
 };
 
+class CPU;
+
+struct OpcodeInfo {
+  string mnemonic;
+  void (CPU::*resolve)() = nullptr;
+  void (CPU::*execute)() = nullptr;
+  uint8_t bytes;
+  uint8_t cycles;
+  bool penality;
+};
+
 class CPU {
   CPU(const CPU&) = delete;
   CPU& operator=(const CPU&) = delete;
 
  public:
-  CPU(shared_ptr<Bus> abus) : bus(abus) {}
+  CPU(shared_ptr<Bus> abus) : bus(abus) { setOpcodesInfo(); }
   ~CPU() = default;
 
   void reset();
   void nmi();
   void irq();
+  void clock(bool force = false);
 
  public:  // for testing
   // private:
@@ -96,6 +102,19 @@ class CPU {
   void zp();
   void zpx();
   void zpy();
+  // instructions
+  void setOpcodesInfo();
+  void branch(bool condition);
+  void ADC();
+  void AND();
+  void ASL();
+  void BCC();
+  void BCS();
+  void BEQ();
+  void BIT();
+  void BMI();
+  void BNE();
+  void BPL();
 
   shared_ptr<Bus> bus;
   uint8_t a = 0;
@@ -104,8 +123,10 @@ class CPU {
   uint8_t p = 0x24;
   uint8_t sp = 0xff;
   uint16_t pc = 0x0000;
-  Addressing addressing;
-  uint16_t address;
-  uint8_t operand;
-  bool penality;
+  Addressing addressing = Addressing::Imp;
+  uint16_t address = 0x0000;
+  bool penality = false;
+  uint16_t cycles = 0;
+  OpcodeInfo opcodeInfo;
+  unordered_map<uint8_t, OpcodeInfo> opcodes{};
 };

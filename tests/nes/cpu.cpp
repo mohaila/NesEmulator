@@ -307,7 +307,6 @@ TEST_F(CPUTest, IndyAddressingPenality) {
 TEST_F(CPUTest, RelAddressingPositive) {
   // arrange
   cpu->pc = 0x02000;
-  cpu->y = 0x45;
   uint8_t code[] = {0x30, 0x50};
   memory->set(0x02000, code, 2);
   uint8_t addr[] = {0xf0, 0x45};
@@ -323,7 +322,6 @@ TEST_F(CPUTest, RelAddressingPositive) {
 TEST_F(CPUTest, RelAddressingNegative) {
   // arrange
   cpu->pc = 0x02000;
-  cpu->y = 0x45;
   uint8_t code[] = {0x30, 0xf0};
   memory->set(0x02000, code, 2);
   uint8_t addr[] = {0xf0, 0x45};
@@ -334,4 +332,309 @@ TEST_F(CPUTest, RelAddressingNegative) {
   // assert
   ASSERT_EQ(cpu->addressing, Addressing::Rel);
   ASSERT_EQ(cpu->address, cpu->pc + 0x100 - 0xf0);
+}
+
+TEST_F(CPUTest, ZpAddressing) {
+  // arrange
+  cpu->pc = 0x02000;
+  uint8_t code[] = {0x65, 0xf0};
+  memory->set(0x02000, code, 2);
+  uint8_t values[] = {0x45};
+  memory->set(0xf0, values, 1);
+
+  // act
+  cpu->zp();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Zp);
+  ASSERT_EQ(cpu->address, 0xf0);
+  ASSERT_EQ(cpu->read8(), 0x45);
+}
+
+TEST_F(CPUTest, ZpxAddressing) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->x = 0x30;
+  uint8_t code[] = {0x75, 0x45};
+  memory->set(0x02000, code, 2);
+  uint8_t values[] = {0x80};
+  memory->set(0x75, values, 1);
+
+  // act
+  cpu->zpx();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Zpx);
+  ASSERT_EQ(cpu->address, 0x75);
+  ASSERT_EQ(cpu->read8(), 0x80);
+}
+
+TEST_F(CPUTest, ZpyAddressing) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->y = 0x45;
+  uint8_t code[] = {0xb6, 0x45};
+  memory->set(0x02000, code, 2);
+  uint8_t values[] = {0x8f};
+  memory->set(0x8a, values, 1);
+
+  // act
+  cpu->zpy();
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Zpy);
+  ASSERT_EQ(cpu->address, 0x8a);
+  ASSERT_EQ(cpu->read8(), 0x8f);
+}
+
+TEST_F(CPUTest, AdcImmOverflowPositive) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->a = 0x7f;
+  cpu->setFlag(Flags::C, true);
+  uint8_t code[] = {0x69, 0x7f};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imm);
+  ASSERT_EQ(cpu->pc, 0x02002);
+  ASSERT_EQ(cpu->a, 0xff);
+  ASSERT_EQ(cpu->getFlag(Flags::C), false);
+  ASSERT_EQ(cpu->getFlag(Flags::V), true);
+  ASSERT_EQ(cpu->getFlag(Flags::N), true);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), false);
+}
+
+TEST_F(CPUTest, AdcImmUnderflowNegative) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->a = 0xf5;
+  cpu->setFlag(Flags::C, false);
+  uint8_t code[] = {0x69, 0x83};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Imm);
+  ASSERT_EQ(cpu->pc, 0x02002);
+  ASSERT_EQ(cpu->a, 0x78);
+  ASSERT_EQ(cpu->getFlag(Flags::C), true);
+  ASSERT_EQ(cpu->getFlag(Flags::V), true);
+  ASSERT_EQ(cpu->getFlag(Flags::N), false);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), false);
+}
+
+TEST_F(CPUTest, AndZp) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->a = 0xf5;
+  uint8_t code[] = {0x25, 0x83};
+  memory->set(0x02000, code, 2);
+  uint8_t data[] = {0xf0};
+  memory->set(0x83, data, 1);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Zp);
+  ASSERT_EQ(cpu->pc, 0x02002);
+  ASSERT_EQ(cpu->a, 0xf0);
+  ASSERT_EQ(cpu->getFlag(Flags::N), true);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), false);
+}
+
+TEST_F(CPUTest, AslAcc) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->a = 0x80;
+  uint8_t code[] = {0x0a};
+  memory->set(0x02000, code, 1);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Acc);
+  ASSERT_EQ(cpu->pc, 0x02001);
+  ASSERT_EQ(cpu->a, 0x00);
+  ASSERT_EQ(cpu->getFlag(Flags::C), true);
+  ASSERT_EQ(cpu->getFlag(Flags::N), false);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), true);
+}
+
+TEST_F(CPUTest, AslAbs) {
+  // arrange
+  cpu->pc = 0x02000;
+  uint8_t code[] = {0x0e, 0x40, 0x30};
+  memory->set(0x02000, code, 3);
+  uint8_t data[] = {0x40};
+  memory->set(0x3040, data, 1);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Abs);
+  ASSERT_EQ(cpu->pc, 0x02003);
+  ASSERT_EQ(bus->read8(0x3040), 0x80);
+  ASSERT_EQ(cpu->getFlag(Flags::C), false);
+  ASSERT_EQ(cpu->getFlag(Flags::N), true);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), false);
+}
+
+TEST_F(CPUTest, BccFailure) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::C, true);
+  uint8_t code[] = {0x90, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02002);
+}
+
+TEST_F(CPUTest, BccSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::C, false);
+  uint8_t code[] = {0x90, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02042);
+}
+
+TEST_F(CPUTest, BcsFailure) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::C, false);
+  uint8_t code[] = {0xb0, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02002);
+}
+
+TEST_F(CPUTest, BcsSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::C, true);
+  uint8_t code[] = {0xb0, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02042);
+}
+
+TEST_F(CPUTest, BitZp) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->a = 0xf0;
+  uint8_t code[] = {0x24, 0x40};
+  memory->set(0x02000, code, 2);
+  uint8_t data[] = {0xe0};
+  memory->set(0x0040, data, 1);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Zp);
+  ASSERT_EQ(cpu->pc, 0x02002);
+  ASSERT_EQ(cpu->getFlag(Flags::V), true);
+  ASSERT_EQ(cpu->getFlag(Flags::N), true);
+  ASSERT_EQ(cpu->getFlag(Flags::Z), false);
+}
+
+TEST_F(CPUTest, BmiFailure) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::N, false);
+  uint8_t code[] = {0x30, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02002);
+}
+
+TEST_F(CPUTest, BmiSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::N, true);
+  uint8_t code[] = {0x30, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02042);
+}
+
+TEST_F(CPUTest, BneFailure) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::Z, true);
+  uint8_t code[] = {0xd0, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02002);
+}
+
+TEST_F(CPUTest, BneSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::Z, false);
+  uint8_t code[] = {0xd0, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02042);
+}
+
+TEST_F(CPUTest, BplFailure) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::N, true);
+  uint8_t code[] = {0x10, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02002);
+}
+
+TEST_F(CPUTest, BplSuccess) {
+  // arrange
+  cpu->pc = 0x02000;
+  cpu->setFlag(Flags::N, false);
+  uint8_t code[] = {0x10, 0x40};
+  memory->set(0x02000, code, 2);
+
+  // act
+  cpu->clock(true);
+  // assert
+  ASSERT_EQ(cpu->addressing, Addressing::Rel);
+  ASSERT_EQ(cpu->pc, 0x02042);
 }
