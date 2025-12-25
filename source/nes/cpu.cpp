@@ -340,6 +340,31 @@ void CPU::setOpcodesInfo() {
   opcodes[0xb4] = OpcodeInfo{"LDY", &CPU::zpx, &CPU::LDY, 2, 4, false};
   opcodes[0xac] = OpcodeInfo{"LDY", &CPU::abs, &CPU::LDY, 3, 4, false};
   opcodes[0xbc] = OpcodeInfo{"LDY", &CPU::absx, &CPU::LDY, 3, 4, true};
+  // LSR
+  opcodes[0x4a] = OpcodeInfo{"LSR", &CPU::acc, &CPU::LSR, 1, 2, false};
+  opcodes[0x46] = OpcodeInfo{"LSR", &CPU::zp, &CPU::LSR, 2, 5, false};
+  opcodes[0x56] = OpcodeInfo{"LSR", &CPU::zpx, &CPU::LSR, 2, 6, false};
+  opcodes[0x4e] = OpcodeInfo{"LSR", &CPU::abs, &CPU::LSR, 3, 6, false};
+  opcodes[0x5e] = OpcodeInfo{"LSR", &CPU::absx, &CPU::LSR, 3, 7, false};
+  // NOP
+  opcodes[0xea] = OpcodeInfo{"NOP", &CPU::imp, &CPU::NOP, 1, 2, false};
+  // ORA
+  opcodes[0x09] = OpcodeInfo{"ORA", &CPU::imm, &CPU::ORA, 2, 2, false};
+  opcodes[0x05] = OpcodeInfo{"ORA", &CPU::zp, &CPU::ORA, 2, 3, false};
+  opcodes[0x15] = OpcodeInfo{"ORA", &CPU::zpx, &CPU::ORA, 2, 4, false};
+  opcodes[0x0d] = OpcodeInfo{"ORA", &CPU::abs, &CPU::ORA, 3, 4, false};
+  opcodes[0x1d] = OpcodeInfo{"ORA", &CPU::absx, &CPU::ORA, 3, 4, true};
+  opcodes[0x19] = OpcodeInfo{"ORA", &CPU::absy, &CPU::ORA, 3, 4, true};
+  opcodes[0x01] = OpcodeInfo{"ORA", &CPU::indx, &CPU::ORA, 2, 6, false};
+  opcodes[0x11] = OpcodeInfo{"ORA", &CPU::indy, &CPU::ORA, 2, 5, true};
+  // PHA
+  opcodes[0x48] = OpcodeInfo{"PHA", &CPU::imp, &CPU::PHA, 1, 3, false};
+  // PHP
+  opcodes[0x08] = OpcodeInfo{"PHP", &CPU::imp, &CPU::PHP, 1, 3, false};
+  // PLA
+  opcodes[0x68] = OpcodeInfo{"PLA", &CPU::imp, &CPU::PLA, 1, 4, false};
+  // PLP
+  opcodes[0x28] = OpcodeInfo{"PLP", &CPU::imp, &CPU::PLP, 1, 4, false};
 }
 
 void CPU::branch(bool condition) {
@@ -501,3 +526,33 @@ void CPU::LDY() {
   y = read8();
   setZN(y);
 }
+
+void CPU::LSR() {
+  auto value = read8();
+  setFlag(Flags::C, (value & 0x01) != 0);
+  value >>= 1;
+  setZN(value);
+  write8(value);
+}
+
+void CPU::NOP() {}
+
+void CPU::ORA() {
+  a |= read8();
+  setZN(a);
+}
+
+void CPU::PHA() { push8(a); }
+
+void CPU::PHP() {
+  auto status =
+      p | static_cast<uint8_t>(Flags::B) | static_cast<uint8_t>(Flags::U);
+  push8(status);
+}
+
+void CPU::PLA() {
+  a = pop8();
+  setZN(a);
+}
+
+void CPU::PLP() { p = pop8() & 0xef | 0x20; }

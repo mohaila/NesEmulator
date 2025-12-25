@@ -138,6 +138,13 @@ class CPU {
   void LDA();
   void LDX();
   void LDY();
+  void LSR();
+  void NOP();
+  void ORA();
+  void PHA();
+  void PHP();
+  void PLA();
+  void PLP();
 
   shared_ptr<Bus> bus;
   uint8_t a = 0;
