@@ -82,6 +82,8 @@ class CPU {
   void write8(uint8_t value);
   uint16_t getAddress();
 
+  void debug();
+
   // stack operations
   void push8(uint8_t value);
   void push16(uint16_t value);

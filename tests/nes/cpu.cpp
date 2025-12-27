@@ -316,7 +316,7 @@ TEST_F(CPUTest, RelAddressingPositive) {
   cpu->rel();
   // assert
   ASSERT_EQ(cpu->addressing, Addressing::Rel);
-  ASSERT_EQ(cpu->address, cpu->pc + 0x50);
+  ASSERT_EQ(cpu->address, cpu->pc + 0x52);
 }
 
 TEST_F(CPUTest, RelAddressingNegative) {
@@ -331,7 +331,7 @@ TEST_F(CPUTest, RelAddressingNegative) {
   cpu->rel();
   // assert
   ASSERT_EQ(cpu->addressing, Addressing::Rel);
-  ASSERT_EQ(cpu->address, cpu->pc + 0x100 - 0xf0);
+  ASSERT_EQ(cpu->address, cpu->pc + 2 + 0xf0 - 0x100);
 }
 
 TEST_F(CPUTest, ZpAddressing) {
@@ -1506,4 +1506,79 @@ TEST_F(CPUTest, TyaSuccess) {
   ASSERT_EQ(cpu->a, cpu->y);
   ASSERT_EQ(cpu->getFlag(Flags::N), false);
   ASSERT_EQ(cpu->getFlag(Flags::Z), true);
+}
+
+TEST_F(CPUTest, Reset) {
+  // arrange
+  memory->write16(RESET_PROC_ADDR, 0x4235);
+  // act
+  cpu->reset();
+  // assert
+  ASSERT_EQ(cpu->a, 0x00);
+  ASSERT_EQ(cpu->x, 0x00);
+  ASSERT_EQ(cpu->y, 0x00);
+  ASSERT_EQ(cpu->pc, 0x4235);
+  ASSERT_EQ(cpu->sp, 0xfd);
+  ASSERT_EQ(cpu->p, 0x20);
+}
+
+TEST_F(CPUTest, Nmi) {
+  // arrange
+  memory->write16(NMI_PROC_ADDR, 0x4235);
+  auto a = cpu->a;
+  auto x = cpu->x;
+  auto y = cpu->y;
+  auto sp = cpu->sp;
+  auto p = cpu->p;
+  // act
+  cpu->nmi();
+  // assert
+  ASSERT_EQ(cpu->a, a);
+  ASSERT_EQ(cpu->x, x);
+  ASSERT_EQ(cpu->y, y);
+  ASSERT_EQ(cpu->pc, 0x4235);
+  ASSERT_EQ(cpu->sp, sp - 3);
+  ASSERT_EQ(cpu->p, p | 0x24);
+}
+
+TEST_F(CPUTest, IrqFailure) {
+  // arrange
+  memory->write16(IRQ_PROC_ADDR, 0x4235);
+  cpu->setFlag(Flags::I);
+  auto a = cpu->a;
+  auto x = cpu->x;
+  auto y = cpu->y;
+  auto sp = cpu->sp;
+  auto p = cpu->p;
+  auto pc = cpu->pc;
+  // act
+  cpu->irq();
+  // assert
+  ASSERT_EQ(cpu->a, a);
+  ASSERT_EQ(cpu->x, x);
+  ASSERT_EQ(cpu->y, y);
+  ASSERT_EQ(cpu->pc, pc);
+  ASSERT_EQ(cpu->sp, sp);
+  ASSERT_EQ(cpu->p, p);
+}
+
+TEST_F(CPUTest, IrqSuccess) {
+  // arrange
+  memory->write16(IRQ_PROC_ADDR, 0x4235);
+  cpu->clearFlag(Flags::I);
+  auto a = cpu->a;
+  auto x = cpu->x;
+  auto y = cpu->y;
+  auto sp = cpu->sp;
+  auto p = cpu->p;
+  auto pc = cpu->pc;
+  // act
+  cpu->irq();
+  // assert
+  ASSERT_EQ(cpu->a, a);
+  ASSERT_EQ(cpu->x, x);
+  ASSERT_EQ(cpu->y, y);
+  ASSERT_EQ(cpu->pc, 0x4235);
+  ASSERT_EQ(cpu->sp, sp - 3);
+  ASSERT_EQ(cpu->p, p | 0x24);
 }

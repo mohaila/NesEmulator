@@ -89,9 +89,9 @@ void CPU::rel() {
   addressing = Addressing::Rel;
   auto offset = bus->read8(pc + 1);
   if (offset < 0x80) {
-    address = pc + offset;
+    address = pc + 2 + offset;
   } else {
-    address = pc + 0x100 - offset;
+    address = pc + 2 + offset - 0x100;
   }
 }
 
@@ -173,8 +173,8 @@ void CPU::reset() {
   a = 0;
   x = 0;
   y = 0;
-  p = 0x24;
-  sp = 0xff;
+  p = 0x20;
+  sp = 0xfd;
   pc = bus->read16(RESET_PROC_ADDR);
 }
 
@@ -203,17 +203,37 @@ void CPU::irq() {
 
 void CPU::clock(bool force) {
   if (cycles == 0 || force) {
+    uint8_t opcode = 0x00;
     try {
-      auto opcode = bus->read8(pc);
+      opcode = bus->read8(pc);
       opcodeInfo = opcodes.at(opcode);
+      // debug();
       (this->*opcodeInfo.resolve)();
       cycles += opcodeInfo.cycles;
       pc += opcodeInfo.bytes;
       (this->*opcodeInfo.execute)();
     } catch (const exception& e) {
+      printf("invalid opcode: %02x\n", opcode);
     }
   }
   cycles--;
+}
+
+void CPU::debug() {
+  uint8_t byte1 = bus->read8(pc);
+  char byte2[3] = "  ";
+  if (opcodeInfo.bytes >= 2) {
+    auto value = bus->read8(pc + 1);
+    sprintf(byte2, "%02x", value);
+  }
+  char byte3[3] = "  ";
+  if (opcodeInfo.bytes >= 3) {
+    auto value = bus->read8(pc + 2);
+    sprintf(byte3, "%02x", value);
+  }
+
+  printf("%04x %s  %02x %s %s a:%02x x:%02x y:%02x sp:%02x p:%08b\n", pc,
+         opcodeInfo.mnemonic.c_str(), byte1, byte2, byte3, a, x, y, sp, p);
 }
 
 void CPU::setOpcodesInfo() {
@@ -429,7 +449,7 @@ void CPU::setOpcodesInfo() {
 void CPU::branch(bool condition) {
   if (condition) {
     auto page = pc & 0xff00;
-    pc = address + 2;
+    pc = address;
     cycles++;
     if (page != (pc & 0xff00)) {
       cycles++;
