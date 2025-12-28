@@ -3,7 +3,7 @@
 #include "bus.hpp"
 
 using std::string;
-using std::unordered_map;
+using std::vector;
 
 #define STACK_PAGE 0x0100
 #define NMI_PROC_ADDR 0xfffa
@@ -40,6 +40,7 @@ enum class Addressing : uint8_t {
 class CPU;
 
 struct OpcodeInfo {
+  uint8_t opcode;
   string mnemonic;
   void (CPU::*resolve)() = nullptr;
   void (CPU::*execute)() = nullptr;
@@ -165,6 +166,8 @@ class CPU {
   void TXA();
   void TXS();
   void TYA();
+  // Invalid
+  void XXX();
 
   shared_ptr<Bus> bus;
   uint8_t a = 0;
@@ -178,5 +181,5 @@ class CPU {
   bool penality = false;
   uint16_t cycles = 0;
   OpcodeInfo opcodeInfo;
-  unordered_map<uint8_t, OpcodeInfo> opcodes{};
+  vector<OpcodeInfo> opcodes;
 };

@@ -203,18 +203,16 @@ void CPU::irq() {
 
 void CPU::clock(bool force) {
   if (cycles == 0 || force) {
-    uint8_t opcode = 0x00;
-    try {
-      opcode = bus->read8(pc);
-      opcodeInfo = opcodes.at(opcode);
-      // debug();
-      (this->*opcodeInfo.resolve)();
-      cycles += opcodeInfo.cycles;
-      pc += opcodeInfo.bytes;
-      (this->*opcodeInfo.execute)();
-    } catch (const exception& e) {
-      printf("invalid opcode: %02x\n", opcode);
+    auto opcode = bus->read8(pc);
+    opcodeInfo = opcodes[opcode];
+    if (opcodeInfo.mnemonic == "XXX") {
+      fprintf(stderr, "Invalid opcode at %04x\n", pc);
+      debug();
     }
+    (this->*opcodeInfo.resolve)();
+    cycles += opcodeInfo.cycles;
+    pc += opcodeInfo.bytes;
+    (this->*opcodeInfo.execute)();
   }
   cycles--;
 }
@@ -237,213 +235,264 @@ void CPU::debug() {
 }
 
 void CPU::setOpcodesInfo() {
-  // ADC
-  opcodes[0x69] = OpcodeInfo{"ADC", &CPU::imm, &CPU::ADC, 2, 2, false};
-  opcodes[0x65] = OpcodeInfo{"ADC", &CPU::zp, &CPU::ADC, 2, 3, false};
-  opcodes[0x75] = OpcodeInfo{"ADC", &CPU::zpx, &CPU::ADC, 2, 4, false};
-  opcodes[0x6d] = OpcodeInfo{"ADC", &CPU::abs, &CPU::ADC, 3, 4, false};
-  opcodes[0x7d] = OpcodeInfo{"ADC", &CPU::absx, &CPU::ADC, 3, 4, true};
-  opcodes[0x79] = OpcodeInfo{"ADC", &CPU::absy, &CPU::ADC, 3, 4, true};
-  opcodes[0x61] = OpcodeInfo{"ADC", &CPU::indx, &CPU::ADC, 2, 6, false};
-  opcodes[0x71] = OpcodeInfo{"ADC", &CPU::indy, &CPU::ADC, 2, 5, true};
-  // AND
-  opcodes[0x29] = OpcodeInfo{"AND", &CPU::imm, &CPU::AND, 2, 2, false};
-  opcodes[0x25] = OpcodeInfo{"AND", &CPU::zp, &CPU::AND, 2, 3, false};
-  opcodes[0x35] = OpcodeInfo{"AND", &CPU::zpx, &CPU::AND, 2, 4, false};
-  opcodes[0x2d] = OpcodeInfo{"AND", &CPU::abs, &CPU::AND, 3, 4, false};
-  opcodes[0x3d] = OpcodeInfo{"AND", &CPU::absx, &CPU::AND, 3, 4, true};
-  opcodes[0x39] = OpcodeInfo{"AND", &CPU::absy, &CPU::AND, 3, 4, true};
-  opcodes[0x21] = OpcodeInfo{"AND", &CPU::indx, &CPU::AND, 2, 6, false};
-  opcodes[0x31] = OpcodeInfo{"AND", &CPU::indy, &CPU::AND, 2, 5, true};
-  // ASL
-  opcodes[0x0a] = OpcodeInfo{"ASL", &CPU::acc, &CPU::ASL, 1, 2, false};
-  opcodes[0x06] = OpcodeInfo{"ASL", &CPU::zp, &CPU::ASL, 2, 5, false};
-  opcodes[0x16] = OpcodeInfo{"ASL", &CPU::zpx, &CPU::ASL, 2, 6, false};
-  opcodes[0x0e] = OpcodeInfo{"ASL", &CPU::abs, &CPU::ASL, 3, 6, false};
-  opcodes[0x1e] = OpcodeInfo{"ASL", &CPU::absx, &CPU::ASL, 3, 7, false};
-  // BCC
-  opcodes[0x90] = OpcodeInfo{"BCC", &CPU::rel, &CPU::BCC, 2, 2, true};
-  // BCS
-  opcodes[0xb0] = OpcodeInfo{"BCS", &CPU::rel, &CPU::BCS, 2, 2, true};
-  // BEQ
-  opcodes[0xf0] = OpcodeInfo{"BEQ", &CPU::rel, &CPU::BEQ, 2, 2, true};
-  // BIT
-  opcodes[0x24] = OpcodeInfo{"BIT", &CPU::zp, &CPU::BIT, 2, 3, false};
-  opcodes[0x2c] = OpcodeInfo{"BIT", &CPU::abs, &CPU::BIT, 3, 4, false};
-  // BMI
-  opcodes[0x30] = OpcodeInfo{"BMI", &CPU::rel, &CPU::BMI, 2, 2, true};
-  // BNE
-  opcodes[0xd0] = OpcodeInfo{"BNE", &CPU::rel, &CPU::BNE, 2, 2, true};
-  // BPL
-  opcodes[0x10] = OpcodeInfo{"BPL", &CPU::rel, &CPU::BPL, 2, 2, true};
-  // BRK
-  opcodes[0x00] = OpcodeInfo{"BRK", &CPU::imm, &CPU::BRK, 2, 7, false};
-  // BVC
-  opcodes[0x50] = OpcodeInfo{"BVC", &CPU::rel, &CPU::BVC, 2, 2, true};
-  // BVS
-  opcodes[0x70] = OpcodeInfo{"BVS", &CPU::rel, &CPU::BVS, 2, 2, true};
-  // CLC
-  opcodes[0x18] = OpcodeInfo{"CLC", &CPU::imp, &CPU::CLC, 1, 2, false};
-  // CLD
-  opcodes[0xd8] = OpcodeInfo{"CLD", &CPU::imp, &CPU::CLD, 1, 2, false};
-  // CLI
-  opcodes[0x58] = OpcodeInfo{"CLI", &CPU::imp, &CPU::CLI, 1, 2, false};
-  // CLV
-  opcodes[0xb8] = OpcodeInfo{"CLV", &CPU::imp, &CPU::CLV, 1, 2, false};
-  // CMP
-  opcodes[0xc9] = OpcodeInfo{"CMP", &CPU::imm, &CPU::CMP, 2, 2, false};
-  opcodes[0xc5] = OpcodeInfo{"CMP", &CPU::zp, &CPU::CMP, 2, 3, false};
-  opcodes[0xd5] = OpcodeInfo{"CMP", &CPU::zpx, &CPU::CMP, 2, 4, false};
-  opcodes[0xcd] = OpcodeInfo{"CMP", &CPU::abs, &CPU::CMP, 3, 4, false};
-  opcodes[0xdd] = OpcodeInfo{"CMP", &CPU::absx, &CPU::CMP, 3, 4, true};
-  opcodes[0xd9] = OpcodeInfo{"CMP", &CPU::absy, &CPU::CMP, 3, 4, true};
-  opcodes[0xc1] = OpcodeInfo{"CMP", &CPU::indx, &CPU::CMP, 2, 6, false};
-  opcodes[0xd1] = OpcodeInfo{"CMP", &CPU::indy, &CPU::CMP, 2, 5, true};
-  // CPX
-  opcodes[0xe0] = OpcodeInfo{"CPX", &CPU::imm, &CPU::CPX, 2, 2, false};
-  opcodes[0xe4] = OpcodeInfo{"CPX", &CPU::zp, &CPU::CPX, 2, 3, false};
-  opcodes[0xec] = OpcodeInfo{"CPX", &CPU::abs, &CPU::CPX, 3, 4, false};
-  // CPX
-  opcodes[0xc0] = OpcodeInfo{"CPY", &CPU::imm, &CPU::CPY, 2, 2, false};
-  opcodes[0xc4] = OpcodeInfo{"CPY", &CPU::zp, &CPU::CPY, 2, 3, false};
-  opcodes[0xcc] = OpcodeInfo{"CPY", &CPU::abs, &CPU::CPY, 3, 4, false};
-  // DEC
-  opcodes[0xc6] = OpcodeInfo{"DEC", &CPU::zp, &CPU::DEC, 2, 5, false};
-  opcodes[0xd6] = OpcodeInfo{"DEC", &CPU::zpx, &CPU::DEC, 2, 6, false};
-  opcodes[0xce] = OpcodeInfo{"DEC", &CPU::abs, &CPU::DEC, 3, 6, false};
-  opcodes[0xde] = OpcodeInfo{"DEC", &CPU::absx, &CPU::DEC, 3, 7, true};
-  // DEX
-  opcodes[0xca] = OpcodeInfo{"DEX", &CPU::imp, &CPU::DEX, 1, 2, false};
-  // DEY
-  opcodes[0x88] = OpcodeInfo{"DEY", &CPU::imp, &CPU::DEY, 1, 2, false};
-  // EOR
-  opcodes[0x49] = OpcodeInfo{"EOR", &CPU::imm, &CPU::EOR, 2, 2, false};
-  opcodes[0x45] = OpcodeInfo{"EOR", &CPU::zp, &CPU::EOR, 2, 3, false};
-  opcodes[0x55] = OpcodeInfo{"EOR", &CPU::zpx, &CPU::EOR, 2, 4, false};
-  opcodes[0x4d] = OpcodeInfo{"EOR", &CPU::abs, &CPU::EOR, 3, 4, false};
-  opcodes[0x5d] = OpcodeInfo{"EOR", &CPU::absx, &CPU::EOR, 3, 4, true};
-  opcodes[0x59] = OpcodeInfo{"EOR", &CPU::absy, &CPU::EOR, 3, 4, true};
-  opcodes[0x41] = OpcodeInfo{"EOR", &CPU::indx, &CPU::EOR, 2, 6, false};
-  opcodes[0x51] = OpcodeInfo{"EOR", &CPU::indy, &CPU::EOR, 2, 5, true};
-  // INC
-  opcodes[0xe6] = OpcodeInfo{"INC", &CPU::zp, &CPU::INC, 2, 5, false};
-  opcodes[0xf6] = OpcodeInfo{"INC", &CPU::zpx, &CPU::INC, 2, 6, false};
-  opcodes[0xee] = OpcodeInfo{"INC", &CPU::abs, &CPU::INC, 3, 6, false};
-  opcodes[0xfe] = OpcodeInfo{"INC", &CPU::absx, &CPU::INC, 3, 7, true};
-  // INX
-  opcodes[0xe8] = OpcodeInfo{"INX", &CPU::imp, &CPU::INX, 1, 2, false};
-  // INY
-  opcodes[0xc8] = OpcodeInfo{"INY", &CPU::imp, &CPU::INY, 1, 2, false};
-  // JMP
-  opcodes[0x4c] = OpcodeInfo{"JMP", &CPU::abs, &CPU::JMP, 3, 3, false};
-  opcodes[0x6c] = OpcodeInfo{"JMP", &CPU::ind, &CPU::JMP, 3, 5, false};
-  // JSR
-  opcodes[0x20] = OpcodeInfo{"JSR", &CPU::abs, &CPU::JSR, 3, 6, false};
-  // LDA
-  opcodes[0xa9] = OpcodeInfo{"LDA", &CPU::imm, &CPU::LDA, 2, 2, false};
-  opcodes[0xa5] = OpcodeInfo{"LDA", &CPU::zp, &CPU::LDA, 2, 3, false};
-  opcodes[0xb5] = OpcodeInfo{"LDA", &CPU::zpx, &CPU::LDA, 2, 4, false};
-  opcodes[0xad] = OpcodeInfo{"LDA", &CPU::abs, &CPU::LDA, 3, 4, false};
-  opcodes[0xbd] = OpcodeInfo{"LDA", &CPU::absx, &CPU::LDA, 3, 4, true};
-  opcodes[0xb9] = OpcodeInfo{"LDA", &CPU::absy, &CPU::LDA, 3, 4, true};
-  opcodes[0xa1] = OpcodeInfo{"LDA", &CPU::indx, &CPU::LDA, 2, 6, false};
-  opcodes[0xb1] = OpcodeInfo{"LDA", &CPU::indy, &CPU::LDA, 2, 5, true};
-  // LDX
-  opcodes[0xa2] = OpcodeInfo{"LDX", &CPU::imm, &CPU::LDX, 2, 2, false};
-  opcodes[0xa6] = OpcodeInfo{"LDX", &CPU::zp, &CPU::LDX, 2, 3, false};
-  opcodes[0xb6] = OpcodeInfo{"LDX", &CPU::zpy, &CPU::LDX, 2, 4, false};
-  opcodes[0xae] = OpcodeInfo{"LDX", &CPU::abs, &CPU::LDX, 3, 4, false};
-  opcodes[0xbe] = OpcodeInfo{"LDX", &CPU::absy, &CPU::LDX, 3, 4, true};
-  // LDY
-  opcodes[0xa0] = OpcodeInfo{"LDY", &CPU::imm, &CPU::LDY, 2, 2, false};
-  opcodes[0xa4] = OpcodeInfo{"LDY", &CPU::zp, &CPU::LDY, 2, 3, false};
-  opcodes[0xb4] = OpcodeInfo{"LDY", &CPU::zpx, &CPU::LDY, 2, 4, false};
-  opcodes[0xac] = OpcodeInfo{"LDY", &CPU::abs, &CPU::LDY, 3, 4, false};
-  opcodes[0xbc] = OpcodeInfo{"LDY", &CPU::absx, &CPU::LDY, 3, 4, true};
-  // LSR
-  opcodes[0x4a] = OpcodeInfo{"LSR", &CPU::acc, &CPU::LSR, 1, 2, false};
-  opcodes[0x46] = OpcodeInfo{"LSR", &CPU::zp, &CPU::LSR, 2, 5, false};
-  opcodes[0x56] = OpcodeInfo{"LSR", &CPU::zpx, &CPU::LSR, 2, 6, false};
-  opcodes[0x4e] = OpcodeInfo{"LSR", &CPU::abs, &CPU::LSR, 3, 6, false};
-  opcodes[0x5e] = OpcodeInfo{"LSR", &CPU::absx, &CPU::LSR, 3, 7, false};
-  // NOP
-  opcodes[0xea] = OpcodeInfo{"NOP", &CPU::imp, &CPU::NOP, 1, 2, false};
-  // ORA
-  opcodes[0x09] = OpcodeInfo{"ORA", &CPU::imm, &CPU::ORA, 2, 2, false};
-  opcodes[0x05] = OpcodeInfo{"ORA", &CPU::zp, &CPU::ORA, 2, 3, false};
-  opcodes[0x15] = OpcodeInfo{"ORA", &CPU::zpx, &CPU::ORA, 2, 4, false};
-  opcodes[0x0d] = OpcodeInfo{"ORA", &CPU::abs, &CPU::ORA, 3, 4, false};
-  opcodes[0x1d] = OpcodeInfo{"ORA", &CPU::absx, &CPU::ORA, 3, 4, true};
-  opcodes[0x19] = OpcodeInfo{"ORA", &CPU::absy, &CPU::ORA, 3, 4, true};
-  opcodes[0x01] = OpcodeInfo{"ORA", &CPU::indx, &CPU::ORA, 2, 6, false};
-  opcodes[0x11] = OpcodeInfo{"ORA", &CPU::indy, &CPU::ORA, 2, 5, true};
-  // PHA
-  opcodes[0x48] = OpcodeInfo{"PHA", &CPU::imp, &CPU::PHA, 1, 3, false};
-  // PHP
-  opcodes[0x08] = OpcodeInfo{"PHP", &CPU::imp, &CPU::PHP, 1, 3, false};
-  // PLA
-  opcodes[0x68] = OpcodeInfo{"PLA", &CPU::imp, &CPU::PLA, 1, 4, false};
-  // PLP
-  opcodes[0x28] = OpcodeInfo{"PLP", &CPU::imp, &CPU::PLP, 1, 4, false};
-  // ROL
-  opcodes[0x2a] = OpcodeInfo{"ROL", &CPU::acc, &CPU::ROL, 1, 2, false};
-  opcodes[0x26] = OpcodeInfo{"ROL", &CPU::zp, &CPU::ROL, 2, 5, false};
-  opcodes[0x36] = OpcodeInfo{"ROL", &CPU::zpx, &CPU::ROL, 2, 6, false};
-  opcodes[0x2e] = OpcodeInfo{"ROL", &CPU::abs, &CPU::ROL, 3, 6, false};
-  opcodes[0x3e] = OpcodeInfo{"ROL", &CPU::absx, &CPU::ROL, 3, 7, false};
-  // ROR
-  opcodes[0x6a] = OpcodeInfo{"ROR", &CPU::acc, &CPU::ROR, 1, 2, false};
-  opcodes[0x66] = OpcodeInfo{"ROR", &CPU::zp, &CPU::ROR, 2, 5, false};
-  opcodes[0x76] = OpcodeInfo{"ROR", &CPU::zpx, &CPU::ROR, 2, 6, false};
-  opcodes[0x6e] = OpcodeInfo{"ROR", &CPU::abs, &CPU::ROR, 3, 6, false};
-  opcodes[0x7e] = OpcodeInfo{"ROR", &CPU::absx, &CPU::ROR, 3, 7, false};
-  // RTI
-  opcodes[0x40] = OpcodeInfo{"RTI", &CPU::imp, &CPU::RTI, 1, 6, false};
-  // RTS
-  opcodes[0x60] = OpcodeInfo{"RTS", &CPU::imp, &CPU::RTS, 1, 6, false};
-  // SBC
-  opcodes[0xe9] = OpcodeInfo{"SBC", &CPU::imm, &CPU::SBC, 2, 2, false};
-  opcodes[0xe5] = OpcodeInfo{"SBC", &CPU::zp, &CPU::SBC, 2, 3, false};
-  opcodes[0xf5] = OpcodeInfo{"SBC", &CPU::zpx, &CPU::SBC, 2, 4, false};
-  opcodes[0xed] = OpcodeInfo{"SBC", &CPU::abs, &CPU::SBC, 3, 4, false};
-  opcodes[0xfd] = OpcodeInfo{"SBC", &CPU::absx, &CPU::SBC, 3, 4, true};
-  opcodes[0xf9] = OpcodeInfo{"SBC", &CPU::absy, &CPU::SBC, 3, 4, true};
-  opcodes[0xe1] = OpcodeInfo{"SBC", &CPU::indx, &CPU::SBC, 2, 6, false};
-  opcodes[0xf1] = OpcodeInfo{"SBC", &CPU::indy, &CPU::SBC, 2, 5, true};
-  // SEC
-  opcodes[0x38] = OpcodeInfo{"SEC", &CPU::imp, &CPU::SEC, 1, 2, false};
-  // SED
-  opcodes[0xf8] = OpcodeInfo{"SED", &CPU::imp, &CPU::SED, 1, 2, false};
-  // SEI
-  opcodes[0x78] = OpcodeInfo{"SEI", &CPU::imp, &CPU::SEI, 1, 2, false};
-  // STA
-  opcodes[0x85] = OpcodeInfo{"STA", &CPU::zp, &CPU::STA, 2, 3, false};
-  opcodes[0x95] = OpcodeInfo{"STA", &CPU::zpx, &CPU::STA, 2, 4, false};
-  opcodes[0x8d] = OpcodeInfo{"STA", &CPU::abs, &CPU::STA, 3, 4, false};
-  opcodes[0x9d] = OpcodeInfo{"STA", &CPU::absx, &CPU::STA, 3, 5, false};
-  opcodes[0x99] = OpcodeInfo{"STA", &CPU::absy, &CPU::STA, 3, 5, false};
-  opcodes[0x81] = OpcodeInfo{"STA", &CPU::indx, &CPU::STA, 2, 6, false};
-  opcodes[0x91] = OpcodeInfo{"STA", &CPU::indy, &CPU::STA, 2, 6, false};
-  // STX
-  opcodes[0x86] = OpcodeInfo{"STX", &CPU::zp, &CPU::STX, 2, 3, false};
-  opcodes[0x96] = OpcodeInfo{"STX", &CPU::zpx, &CPU::STX, 2, 4, false};
-  opcodes[0x8e] = OpcodeInfo{"STX", &CPU::abs, &CPU::STX, 3, 4, false};
-  // STY
-  opcodes[0x84] = OpcodeInfo{"STY", &CPU::zp, &CPU::STY, 2, 3, false};
-  opcodes[0x94] = OpcodeInfo{"STY", &CPU::zpx, &CPU::STY, 2, 4, false};
-  opcodes[0x8c] = OpcodeInfo{"STY", &CPU::abs, &CPU::STY, 3, 4, false};
-  // TAX
-  opcodes[0xaa] = OpcodeInfo{"TAX", &CPU::imp, &CPU::TAX, 1, 2, false};
-  // TAY
-  opcodes[0xa8] = OpcodeInfo{"TAY", &CPU::imp, &CPU::TAY, 1, 2, false};
-  // TSX
-  opcodes[0xba] = OpcodeInfo{"TSX", &CPU::imp, &CPU::TSX, 1, 2, false};
-  // TXA
-  opcodes[0x8a] = OpcodeInfo{"TXA", &CPU::imp, &CPU::TXA, 1, 2, false};
-  // TXS
-  opcodes[0x9a] = OpcodeInfo{"TXS", &CPU::imp, &CPU::TXS, 1, 2, false};
-  // TYA
-  opcodes[0x98] = OpcodeInfo{"TYA", &CPU::imp, &CPU::TYA, 1, 2, false};
+  opcodes = {
+      OpcodeInfo{0x0, "BRK", &CPU::imp, &CPU::BRK, 2, 7, false},
+      OpcodeInfo{0x1, "ORA", &CPU::indx, &CPU::ORA, 2, 6, false},
+      OpcodeInfo{0x2, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x3, "XXX", &CPU::indx, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0x4, "NOP", &CPU::zp, &CPU::NOP, 2, 3, false},
+      OpcodeInfo{0x5, "ORA", &CPU::zp, &CPU::ORA, 2, 3, false},
+      OpcodeInfo{0x6, "ASL", &CPU::zp, &CPU::ASL, 2, 5, false},
+      OpcodeInfo{0x7, "XXX", &CPU::zp, &CPU::XXX, 0, 5, false},
+      OpcodeInfo{0x8, "PHP", &CPU::imp, &CPU::PHP, 1, 3, false},
+      OpcodeInfo{0x9, "ORA", &CPU::imm, &CPU::ORA, 2, 2, false},
+      OpcodeInfo{0xa, "ASL", &CPU::acc, &CPU::ASL, 1, 2, false},
+      OpcodeInfo{0xb, "XXX", &CPU::imm, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0xc, "NOP", &CPU::abs, &CPU::NOP, 3, 4, false},
+      OpcodeInfo{0xd, "ORA", &CPU::abs, &CPU::ORA, 3, 4, false},
+      OpcodeInfo{0xe, "ASL", &CPU::abs, &CPU::ASL, 3, 6, false},
+      OpcodeInfo{0xf, "XXX", &CPU::abs, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0x10, "BPL", &CPU::rel, &CPU::BPL, 2, 2, true},
+      OpcodeInfo{0x11, "ORA", &CPU::indy, &CPU::ORA, 2, 5, true},
+      OpcodeInfo{0x12, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x13, "XXX", &CPU::indy, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0x14, "NOP", &CPU::zpx, &CPU::NOP, 2, 4, false},
+      OpcodeInfo{0x15, "ORA", &CPU::zpx, &CPU::ORA, 2, 4, false},
+      OpcodeInfo{0x16, "ASL", &CPU::zpx, &CPU::ASL, 2, 6, false},
+      OpcodeInfo{0x17, "XXX", &CPU::zpx, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0x18, "CLC", &CPU::imp, &CPU::CLC, 1, 2, false},
+      OpcodeInfo{0x19, "ORA", &CPU::absy, &CPU::ORA, 3, 4, true},
+      OpcodeInfo{0x1a, "NOP", &CPU::imp, &CPU::NOP, 1, 2, false},
+      OpcodeInfo{0x1b, "XXX", &CPU::absy, &CPU::XXX, 0, 7, false},
+      OpcodeInfo{0x1c, "NOP", &CPU::absx, &CPU::NOP, 3, 4, true},
+      OpcodeInfo{0x1d, "ORA", &CPU::absx, &CPU::ORA, 3, 4, true},
+      OpcodeInfo{0x1e, "ASL", &CPU::absx, &CPU::ASL, 3, 7, false},
+      OpcodeInfo{0x1f, "XXX", &CPU::absx, &CPU::XXX, 0, 7, false},
+      OpcodeInfo{0x20, "JSR", &CPU::abs, &CPU::JSR, 3, 6, false},
+      OpcodeInfo{0x21, "AND", &CPU::indx, &CPU::AND, 2, 6, false},
+      OpcodeInfo{0x22, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x23, "XXX", &CPU::indx, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0x24, "BIT", &CPU::zp, &CPU::BIT, 2, 3, false},
+      OpcodeInfo{0x25, "AND", &CPU::zp, &CPU::AND, 2, 3, false},
+      OpcodeInfo{0x26, "ROL", &CPU::zp, &CPU::ROL, 2, 5, false},
+      OpcodeInfo{0x27, "XXX", &CPU::zp, &CPU::XXX, 0, 5, false},
+      OpcodeInfo{0x28, "PLP", &CPU::imp, &CPU::PLP, 1, 4, false},
+      OpcodeInfo{0x29, "AND", &CPU::imm, &CPU::AND, 2, 2, false},
+      OpcodeInfo{0x2a, "ROL", &CPU::acc, &CPU::ROL, 1, 2, false},
+      OpcodeInfo{0x2b, "XXX", &CPU::imm, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x2c, "BIT", &CPU::abs, &CPU::BIT, 3, 4, false},
+      OpcodeInfo{0x2d, "AND", &CPU::abs, &CPU::AND, 3, 4, false},
+      OpcodeInfo{0x2e, "ROL", &CPU::abs, &CPU::ROL, 3, 6, false},
+      OpcodeInfo{0x2f, "XXX", &CPU::abs, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0x30, "BMI", &CPU::rel, &CPU::BMI, 2, 2, true},
+      OpcodeInfo{0x31, "AND", &CPU::indy, &CPU::AND, 2, 5, true},
+      OpcodeInfo{0x32, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x33, "XXX", &CPU::indy, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0x34, "NOP", &CPU::zpx, &CPU::NOP, 2, 4, false},
+      OpcodeInfo{0x35, "AND", &CPU::zpx, &CPU::AND, 2, 4, false},
+      OpcodeInfo{0x36, "ROL", &CPU::zpx, &CPU::ROL, 2, 6, false},
+      OpcodeInfo{0x37, "XXX", &CPU::zpx, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0x38, "SEC", &CPU::imp, &CPU::SEC, 1, 2, false},
+      OpcodeInfo{0x39, "AND", &CPU::absy, &CPU::AND, 3, 4, true},
+      OpcodeInfo{0x3a, "NOP", &CPU::imp, &CPU::NOP, 1, 2, false},
+      OpcodeInfo{0x3b, "XXX", &CPU::absy, &CPU::XXX, 0, 7, false},
+      OpcodeInfo{0x3c, "NOP", &CPU::absx, &CPU::NOP, 3, 4, true},
+      OpcodeInfo{0x3d, "AND", &CPU::absx, &CPU::AND, 3, 4, true},
+      OpcodeInfo{0x3e, "ROL", &CPU::absx, &CPU::ROL, 3, 7, false},
+      OpcodeInfo{0x3f, "XXX", &CPU::absx, &CPU::XXX, 0, 7, false},
+      OpcodeInfo{0x40, "RTI", &CPU::imp, &CPU::RTI, 1, 6, false},
+      OpcodeInfo{0x41, "EOR", &CPU::indx, &CPU::EOR, 2, 6, false},
+      OpcodeInfo{0x42, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x43, "XXX", &CPU::indx, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0x44, "NOP", &CPU::zp, &CPU::NOP, 2, 3, false},
+      OpcodeInfo{0x45, "EOR", &CPU::zp, &CPU::EOR, 2, 3, false},
+      OpcodeInfo{0x46, "LSR", &CPU::zp, &CPU::LSR, 2, 5, false},
+      OpcodeInfo{0x47, "XXX", &CPU::zp, &CPU::XXX, 0, 5, false},
+      OpcodeInfo{0x48, "PHA", &CPU::imp, &CPU::PHA, 1, 3, false},
+      OpcodeInfo{0x49, "EOR", &CPU::imm, &CPU::EOR, 2, 2, false},
+      OpcodeInfo{0x4a, "LSR", &CPU::acc, &CPU::LSR, 1, 2, false},
+      OpcodeInfo{0x4b, "XXX", &CPU::imm, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x4c, "JMP", &CPU::abs, &CPU::JMP, 3, 3, false},
+      OpcodeInfo{0x4d, "EOR", &CPU::abs, &CPU::EOR, 3, 4, false},
+      OpcodeInfo{0x4e, "LSR", &CPU::abs, &CPU::LSR, 3, 6, false},
+      OpcodeInfo{0x4f, "XXX", &CPU::abs, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0x50, "BVC", &CPU::rel, &CPU::BVC, 2, 2, true},
+      OpcodeInfo{0x51, "EOR", &CPU::indy, &CPU::EOR, 2, 5, true},
+      OpcodeInfo{0x52, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x53, "XXX", &CPU::indy, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0x54, "NOP", &CPU::zpx, &CPU::NOP, 2, 4, false},
+      OpcodeInfo{0x55, "EOR", &CPU::zpx, &CPU::EOR, 2, 4, false},
+      OpcodeInfo{0x56, "LSR", &CPU::zpx, &CPU::LSR, 2, 6, false},
+      OpcodeInfo{0x57, "XXX", &CPU::zpx, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0x58, "CLI", &CPU::imp, &CPU::CLI, 1, 2, false},
+      OpcodeInfo{0x59, "EOR", &CPU::absy, &CPU::EOR, 3, 4, true},
+      OpcodeInfo{0x5a, "NOP", &CPU::imp, &CPU::NOP, 1, 2, false},
+      OpcodeInfo{0x5b, "XXX", &CPU::absy, &CPU::XXX, 0, 7, false},
+      OpcodeInfo{0x5c, "NOP", &CPU::absx, &CPU::NOP, 3, 4, true},
+      OpcodeInfo{0x5d, "EOR", &CPU::absx, &CPU::EOR, 3, 4, true},
+      OpcodeInfo{0x5e, "LSR", &CPU::absx, &CPU::LSR, 3, 7, false},
+      OpcodeInfo{0x5f, "XXX", &CPU::absx, &CPU::XXX, 0, 7, false},
+      OpcodeInfo{0x60, "RTS", &CPU::imp, &CPU::RTS, 1, 6, false},
+      OpcodeInfo{0x61, "ADC", &CPU::indx, &CPU::ADC, 2, 6, false},
+      OpcodeInfo{0x62, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x63, "XXX", &CPU::indx, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0x64, "NOP", &CPU::zp, &CPU::NOP, 2, 3, false},
+      OpcodeInfo{0x65, "ADC", &CPU::zp, &CPU::ADC, 2, 3, false},
+      OpcodeInfo{0x66, "ROR", &CPU::zp, &CPU::ROR, 2, 5, false},
+      OpcodeInfo{0x67, "XXX", &CPU::zp, &CPU::XXX, 0, 5, false},
+      OpcodeInfo{0x68, "PLA", &CPU::imp, &CPU::PLA, 1, 4, false},
+      OpcodeInfo{0x69, "ADC", &CPU::imm, &CPU::ADC, 2, 2, false},
+      OpcodeInfo{0x6a, "ROR", &CPU::acc, &CPU::ROR, 1, 2, false},
+      OpcodeInfo{0x6b, "XXX", &CPU::imm, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x6c, "JMP", &CPU::ind, &CPU::JMP, 3, 5, false},
+      OpcodeInfo{0x6d, "ADC", &CPU::abs, &CPU::ADC, 3, 4, false},
+      OpcodeInfo{0x6e, "ROR", &CPU::abs, &CPU::ROR, 3, 6, false},
+      OpcodeInfo{0x6f, "XXX", &CPU::abs, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0x70, "BVS", &CPU::rel, &CPU::BVS, 2, 2, true},
+      OpcodeInfo{0x71, "ADC", &CPU::indy, &CPU::ADC, 2, 5, true},
+      OpcodeInfo{0x72, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x73, "XXX", &CPU::indy, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0x74, "NOP", &CPU::zpx, &CPU::NOP, 2, 4, false},
+      OpcodeInfo{0x75, "ADC", &CPU::zpx, &CPU::ADC, 2, 4, false},
+      OpcodeInfo{0x76, "ROR", &CPU::zpx, &CPU::ROR, 2, 6, false},
+      OpcodeInfo{0x77, "XXX", &CPU::zpx, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0x78, "SEI", &CPU::imp, &CPU::SEI, 1, 2, false},
+      OpcodeInfo{0x79, "ADC", &CPU::absy, &CPU::ADC, 3, 4, true},
+      OpcodeInfo{0x7a, "NOP", &CPU::imp, &CPU::NOP, 1, 2, false},
+      OpcodeInfo{0x7b, "XXX", &CPU::absy, &CPU::XXX, 0, 7, false},
+      OpcodeInfo{0x7c, "NOP", &CPU::absx, &CPU::NOP, 3, 4, true},
+      OpcodeInfo{0x7d, "ADC", &CPU::absx, &CPU::ADC, 3, 4, true},
+      OpcodeInfo{0x7e, "ROR", &CPU::absx, &CPU::ROR, 3, 7, false},
+      OpcodeInfo{0x7f, "XXX", &CPU::absx, &CPU::XXX, 0, 7, false},
+      OpcodeInfo{0x80, "NOP", &CPU::imm, &CPU::NOP, 2, 2, false},
+      OpcodeInfo{0x81, "STA", &CPU::indx, &CPU::STA, 2, 6, false},
+      OpcodeInfo{0x82, "NOP", &CPU::imm, &CPU::NOP, 0, 2, false},
+      OpcodeInfo{0x83, "XXX", &CPU::indx, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0x84, "STY", &CPU::zp, &CPU::STY, 2, 3, false},
+      OpcodeInfo{0x85, "STA", &CPU::zp, &CPU::STA, 2, 3, false},
+      OpcodeInfo{0x86, "STX", &CPU::zp, &CPU::STX, 2, 3, false},
+      OpcodeInfo{0x87, "XXX", &CPU::zp, &CPU::XXX, 0, 3, false},
+      OpcodeInfo{0x88, "DEY", &CPU::imp, &CPU::DEY, 1, 2, false},
+      OpcodeInfo{0x89, "NOP", &CPU::imm, &CPU::NOP, 0, 2, false},
+      OpcodeInfo{0x8a, "TXA", &CPU::imp, &CPU::TXA, 1, 2, false},
+      OpcodeInfo{0x8b, "XXX", &CPU::imm, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x8c, "STY", &CPU::abs, &CPU::STY, 3, 4, false},
+      OpcodeInfo{0x8d, "STA", &CPU::abs, &CPU::STA, 3, 4, false},
+      OpcodeInfo{0x8e, "STX", &CPU::abs, &CPU::STX, 3, 4, false},
+      OpcodeInfo{0x8f, "XXX", &CPU::abs, &CPU::XXX, 0, 4, false},
+      OpcodeInfo{0x90, "BCC", &CPU::rel, &CPU::BCC, 2, 2, true},
+      OpcodeInfo{0x91, "STA", &CPU::indy, &CPU::STA, 2, 6, false},
+      OpcodeInfo{0x92, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0x93, "XXX", &CPU::indy, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0x94, "STY", &CPU::zpx, &CPU::STY, 2, 4, false},
+      OpcodeInfo{0x95, "STA", &CPU::zpx, &CPU::STA, 2, 4, false},
+      OpcodeInfo{0x96, "STX", &CPU::zpy, &CPU::STX, 2, 4, false},
+      OpcodeInfo{0x97, "XXX", &CPU::zpy, &CPU::XXX, 0, 4, false},
+      OpcodeInfo{0x98, "TYA", &CPU::imp, &CPU::TYA, 1, 2, false},
+      OpcodeInfo{0x99, "STA", &CPU::absy, &CPU::STA, 3, 5, false},
+      OpcodeInfo{0x9a, "TXS", &CPU::imp, &CPU::TXS, 1, 2, false},
+      OpcodeInfo{0x9b, "XXX", &CPU::absy, &CPU::XXX, 0, 5, false},
+      OpcodeInfo{0x9c, "XXX", &CPU::absx, &CPU::XXX, 0, 5, false},
+      OpcodeInfo{0x9d, "STA", &CPU::absx, &CPU::STA, 3, 5, false},
+      OpcodeInfo{0x9e, "SHX", &CPU::absy, &CPU::XXX, 0, 5, false},
+      OpcodeInfo{0x9f, "XXX", &CPU::absy, &CPU::XXX, 0, 5, false},
+      OpcodeInfo{0xa0, "LDY", &CPU::imm, &CPU::LDY, 2, 2, false},
+      OpcodeInfo{0xa1, "LDA", &CPU::indx, &CPU::LDA, 2, 6, false},
+      OpcodeInfo{0xa2, "LDX", &CPU::imm, &CPU::LDX, 2, 2, false},
+      OpcodeInfo{0xa3, "XXX", &CPU::indx, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0xa4, "LDY", &CPU::zp, &CPU::LDY, 2, 3, false},
+      OpcodeInfo{0xa5, "LDA", &CPU::zp, &CPU::LDA, 2, 3, false},
+      OpcodeInfo{0xa6, "LDX", &CPU::zp, &CPU::LDX, 2, 3, false},
+      OpcodeInfo{0xa7, "XXX", &CPU::zp, &CPU::XXX, 0, 3, false},
+      OpcodeInfo{0xa8, "TAY", &CPU::imp, &CPU::TAY, 1, 2, false},
+      OpcodeInfo{0xa9, "LDA", &CPU::imm, &CPU::LDA, 2, 2, false},
+      OpcodeInfo{0xaa, "TAX", &CPU::imp, &CPU::TAX, 1, 2, false},
+      OpcodeInfo{0xab, "XXX", &CPU::imm, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0xac, "LDY", &CPU::abs, &CPU::LDY, 3, 4, false},
+      OpcodeInfo{0xad, "LDA", &CPU::abs, &CPU::LDA, 3, 4, false},
+      OpcodeInfo{0xae, "LDX", &CPU::abs, &CPU::LDX, 3, 4, false},
+      OpcodeInfo{0xaf, "XXX", &CPU::abs, &CPU::XXX, 0, 4, false},
+      OpcodeInfo{0xb0, "BCS", &CPU::rel, &CPU::BCS, 2, 2, true},
+      OpcodeInfo{0xb1, "LDA", &CPU::indy, &CPU::LDA, 2, 5, true},
+      OpcodeInfo{0xb2, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0xb3, "XXX", &CPU::indy, &CPU::XXX, 0, 5, true},
+      OpcodeInfo{0xb4, "LDY", &CPU::zpx, &CPU::LDY, 2, 4, false},
+      OpcodeInfo{0xb5, "LDA", &CPU::zpx, &CPU::LDA, 2, 4, false},
+      OpcodeInfo{0xb6, "LDX", &CPU::zpy, &CPU::LDX, 2, 4, false},
+      OpcodeInfo{0xb7, "XXX", &CPU::zpy, &CPU::XXX, 0, 4, false},
+      OpcodeInfo{0xb8, "CLV", &CPU::imp, &CPU::CLV, 1, 2, false},
+      OpcodeInfo{0xb9, "LDA", &CPU::absy, &CPU::LDA, 3, 4, true},
+      OpcodeInfo{0xba, "TSX", &CPU::imp, &CPU::TSX, 1, 2, false},
+      OpcodeInfo{0xbb, "XXX", &CPU::absy, &CPU::XXX, 0, 4, true},
+      OpcodeInfo{0xbc, "LDY", &CPU::absx, &CPU::LDY, 3, 4, true},
+      OpcodeInfo{0xbd, "LDA", &CPU::absx, &CPU::LDA, 3, 4, true},
+      OpcodeInfo{0xbe, "LDX", &CPU::absy, &CPU::LDX, 3, 4, true},
+      OpcodeInfo{0xbf, "XXX", &CPU::absy, &CPU::XXX, 0, 4, true},
+      OpcodeInfo{0xc0, "CPY", &CPU::imm, &CPU::CPY, 2, 2, false},
+      OpcodeInfo{0xc1, "CMP", &CPU::indx, &CPU::CMP, 2, 6, false},
+      OpcodeInfo{0xc2, "NOP", &CPU::imm, &CPU::NOP, 0, 2, false},
+      OpcodeInfo{0xc3, "XXX", &CPU::indx, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0xc4, "CPY", &CPU::zp, &CPU::CPY, 2, 3, false},
+      OpcodeInfo{0xc5, "CMP", &CPU::zp, &CPU::CMP, 2, 3, false},
+      OpcodeInfo{0xc6, "DEC", &CPU::zp, &CPU::DEC, 2, 5, false},
+      OpcodeInfo{0xc7, "XXX", &CPU::zp, &CPU::XXX, 0, 5, false},
+      OpcodeInfo{0xc8, "INY", &CPU::imp, &CPU::INY, 1, 2, false},
+      OpcodeInfo{0xc9, "CMP", &CPU::imm, &CPU::CMP, 2, 2, false},
+      OpcodeInfo{0xca, "DEX", &CPU::imp, &CPU::DEX, 1, 2, false},
+      OpcodeInfo{0xcb, "XXX", &CPU::imm, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0xcc, "CPY", &CPU::abs, &CPU::CPY, 3, 4, false},
+      OpcodeInfo{0xcd, "CMP", &CPU::abs, &CPU::CMP, 3, 4, false},
+      OpcodeInfo{0xce, "DEC", &CPU::abs, &CPU::DEC, 3, 6, false},
+      OpcodeInfo{0xcf, "XXX", &CPU::abs, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0xd0, "BNE", &CPU::rel, &CPU::BNE, 2, 2, true},
+      OpcodeInfo{0xd1, "CMP", &CPU::indy, &CPU::CMP, 2, 5, true},
+      OpcodeInfo{0xd2, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0xd3, "XXX", &CPU::indy, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0xd4, "NOP", &CPU::zpx, &CPU::NOP, 2, 4, false},
+      OpcodeInfo{0xd5, "CMP", &CPU::zpx, &CPU::CMP, 2, 4, false},
+      OpcodeInfo{0xd6, "DEC", &CPU::zpx, &CPU::DEC, 2, 6, false},
+      OpcodeInfo{0xd7, "XXX", &CPU::zpx, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0xd8, "CLD", &CPU::imp, &CPU::CLD, 1, 2, false},
+      OpcodeInfo{0xd9, "CMP", &CPU::absy, &CPU::CMP, 3, 4, true},
+      OpcodeInfo{0xda, "NOP", &CPU::imp, &CPU::NOP, 1, 2, false},
+      OpcodeInfo{0xdb, "XXX", &CPU::absy, &CPU::XXX, 0, 7, false},
+      OpcodeInfo{0xdc, "NOP", &CPU::absx, &CPU::NOP, 3, 4, true},
+      OpcodeInfo{0xdd, "CMP", &CPU::absx, &CPU::CMP, 3, 4, true},
+      OpcodeInfo{0xde, "DEC", &CPU::absx, &CPU::DEC, 3, 7, false},
+      OpcodeInfo{0xdf, "XXX", &CPU::absx, &CPU::XXX, 0, 7, false},
+      OpcodeInfo{0xe0, "CPX", &CPU::imm, &CPU::CPX, 2, 2, false},
+      OpcodeInfo{0xe1, "SBC", &CPU::indx, &CPU::SBC, 2, 6, false},
+      OpcodeInfo{0xe2, "NOP", &CPU::imm, &CPU::NOP, 0, 2, false},
+      OpcodeInfo{0xe3, "XXX", &CPU::indx, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0xe4, "CPX", &CPU::zp, &CPU::CPX, 2, 3, false},
+      OpcodeInfo{0xe5, "SBC", &CPU::zp, &CPU::SBC, 2, 3, false},
+      OpcodeInfo{0xe6, "INC", &CPU::zp, &CPU::INC, 2, 5, false},
+      OpcodeInfo{0xe7, "XXX", &CPU::zp, &CPU::XXX, 0, 5, false},
+      OpcodeInfo{0xe8, "INX", &CPU::imp, &CPU::INX, 1, 2, false},
+      OpcodeInfo{0xe9, "SBC", &CPU::imm, &CPU::SBC, 2, 2, false},
+      OpcodeInfo{0xea, "NOP", &CPU::imp, &CPU::NOP, 1, 2, false},
+      OpcodeInfo{0xeb, "SBC", &CPU::imm, &CPU::SBC, 0, 2, false},
+      OpcodeInfo{0xec, "CPX", &CPU::abs, &CPU::CPX, 3, 4, false},
+      OpcodeInfo{0xed, "SBC", &CPU::abs, &CPU::SBC, 3, 4, false},
+      OpcodeInfo{0xee, "INC", &CPU::abs, &CPU::INC, 3, 6, false},
+      OpcodeInfo{0xef, "XXX", &CPU::abs, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0xf0, "BEQ", &CPU::rel, &CPU::BEQ, 2, 2, true},
+      OpcodeInfo{0xf1, "SBC", &CPU::indy, &CPU::SBC, 2, 5, true},
+      OpcodeInfo{0xf2, "XXX", &CPU::imp, &CPU::XXX, 0, 2, false},
+      OpcodeInfo{0xf3, "XXX", &CPU::indy, &CPU::XXX, 0, 8, false},
+      OpcodeInfo{0xf4, "NOP", &CPU::zpx, &CPU::NOP, 2, 4, false},
+      OpcodeInfo{0xf5, "SBC", &CPU::zpx, &CPU::SBC, 2, 4, false},
+      OpcodeInfo{0xf6, "INC", &CPU::zpx, &CPU::INC, 2, 6, false},
+      OpcodeInfo{0xf7, "XXX", &CPU::zpx, &CPU::XXX, 0, 6, false},
+      OpcodeInfo{0xf8, "SED", &CPU::imp, &CPU::SED, 1, 2, false},
+      OpcodeInfo{0xf9, "SBC", &CPU::absy, &CPU::SBC, 3, 4, true},
+      OpcodeInfo{0xfa, "NOP", &CPU::imp, &CPU::NOP, 1, 2, false},
+      OpcodeInfo{0xfb, "XXX", &CPU::absy, &CPU::XXX, 0, 7, false},
+      OpcodeInfo{0xfc, "NOP", &CPU::absx, &CPU::NOP, 3, 4, true},
+      OpcodeInfo{0xfd, "SBC", &CPU::absx, &CPU::SBC, 3, 4, true},
+      OpcodeInfo{0xfe, "INC", &CPU::absx, &CPU::INC, 3, 7, false},
+      OpcodeInfo{0xff, "XXX", &CPU::absx, &CPU::XXX, 0, 7, false},
+  };
 }
 
 void CPU::branch(bool condition) {
@@ -509,10 +558,10 @@ void CPU::BCS() { branch(getFlag(Flags::C)); }
 void CPU::BEQ() { branch(getFlag(Flags::Z)); }
 
 void CPU::BIT() {
-  auto result = a & read8();
-  setFlag(Flags::Z, a == 0);
-  setFlag(Flags::N, (a & 0x80) != 0);
-  setFlag(Flags::V, (a & 0x40) != 0);
+  auto value = read8();
+  setFlag(Flags::Z, (a & value) == 0);
+  setFlag(Flags::N, (value & 0x80) != 0);
+  setFlag(Flags::V, (value & 0x40) != 0);
 }
 
 void CPU::BMI() { branch(getFlag(Flags::N)); }
@@ -708,3 +757,5 @@ void CPU::TYA() {
   a = y;
   setZN(a);
 }
+
+void CPU::XXX() {}

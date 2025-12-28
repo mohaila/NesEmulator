@@ -677,7 +677,7 @@ TEST_F(CPUTest, BrkSuccess) {
   // act
   cpu->clock(true);
   // assert
-  ASSERT_EQ(cpu->addressing, Addressing::Imm);
+  ASSERT_EQ(cpu->addressing, Addressing::Imp);
   ASSERT_EQ(cpu->pc, 0x2345);
   ASSERT_EQ(cpu->getFlag(Flags::I), true);
   auto status = cpu->pop8();
