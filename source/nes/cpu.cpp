@@ -205,10 +205,13 @@ void CPU::clock(bool force) {
   if (cycles == 0 || force) {
     auto opcode = bus->read8(pc);
     opcodeInfo = opcodes[opcode];
-    if (opcodeInfo.mnemonic == "XXX") {
-      fprintf(stderr, "Invalid opcode at %04x\n", pc);
+    if (verbose) {
+      if (opcodeInfo.mnemonic == "XXX") {
+        fprintf(stderr, "Invalid opcode at %04x\n", pc);
+      }
       debug();
     }
+
     (this->*opcodeInfo.resolve)();
     cycles += opcodeInfo.cycles;
     pc += opcodeInfo.bytes;

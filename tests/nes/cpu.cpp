@@ -19,7 +19,7 @@ class CPUTest : public Test {
   void SetUp() override {
     memory = make_shared<Memory>(0x0000, 0xffff);
     bus = make_shared<Bus>();
-    bus->add(memory);
+    bus->connect(memory);
     cpu = make_shared<CPU>(bus);
   }
 };

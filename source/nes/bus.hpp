@@ -1,6 +1,6 @@
 #pragma once
 
-#include "device.hpp"
+#include "memory.hpp"
 
 using std::shared_ptr;
 using std::vector;
@@ -12,44 +12,16 @@ class Bus {
  public:
   Bus() = default;
   ~Bus() = default;
-  void add(shared_ptr<Device> device) { devices.push_back(device); }
+  void connect(shared_ptr<Memory> memory) { this->memory = memory; }
 
-  uint8_t read8(uint16_t addr) {
-    for (auto& device : devices) {
-      if (device->validate8(addr)) {
-        return device->read8(addr);
-      }
-    }
-    return 0x00;
-  }
+  uint8_t read8(uint16_t addr) { return memory->read8(addr); }
 
-  void write8(uint16_t addr, uint8_t value) {
-    for (auto& device : devices) {
-      if (device->validate8(addr)) {
-        device->write8(addr, value);
-        return;
-      }
-    }
-  }
+  void write8(uint16_t addr, uint8_t value) { memory->write8(addr, value); }
 
-  uint16_t read16(uint16_t addr) {
-    for (auto& device : devices) {
-      if (device->validate16(addr)) {
-        return device->read16(addr);
-      }
-    }
-    return 0x0000;
-  }
+  uint16_t read16(uint16_t addr) { return memory->read16(addr); }
 
-  void write16(uint16_t addr, uint16_t value) {
-    for (auto& device : devices) {
-      if (device->validate16(addr)) {
-        device->write16(addr, value);
-        return;
-      }
-    }
-  }
+  void write16(uint16_t addr, uint16_t value) { memory->write16(addr, value); }
 
  private:
-  vector<shared_ptr<Device>> devices{};
+  shared_ptr<Memory> memory = nullptr;
 };

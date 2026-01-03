@@ -54,7 +54,10 @@ class CPU {
   CPU& operator=(const CPU&) = delete;
 
  public:
-  CPU(shared_ptr<Bus> abus) : bus(abus) { setOpcodesInfo(); }
+  CPU(shared_ptr<Bus> abus, bool verbose = false) : bus(abus) {
+    this->verbose = verbose;
+    setOpcodesInfo();
+  }
   ~CPU() = default;
 
   void reset();
@@ -182,4 +185,5 @@ class CPU {
   uint16_t cycles = 0;
   OpcodeInfo opcodeInfo;
   vector<OpcodeInfo> opcodes;
+  bool verbose = false;
 };

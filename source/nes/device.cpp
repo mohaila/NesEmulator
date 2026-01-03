@@ -12,7 +12,3 @@ void Device::write16(uint16_t addr, uint_fast16_t value) {
   uint8_t hi = (value & 0xff00) >> 8;
   write8(addr + 1, hi);
 }
-
-bool Device::validate16(uint16_t addr) {
-  return validate8(addr) && validate8(addr + 1);
-}

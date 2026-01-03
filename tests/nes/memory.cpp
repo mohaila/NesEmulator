@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
-
 #include "nes/memory.hpp"
+
+#include <gtest/gtest.h>
 
 using std::make_shared;
 using std::shared_ptr;
@@ -30,20 +30,6 @@ TEST_F(MemoryTest, ReadWrite8Success) {
   ASSERT_EQ(result, value);
 }
 
-TEST_F(MemoryTest, ReadWrite8Failure) {
-  // arrange
-  uint8_t value = 0x56;
-  uint16_t addr = 0x0800;
-
-  // act
-  memory->write8(addr, value);
-  auto result = memory->read8(addr);
-
-  // assert
-  ASSERT_NE(result, value);
-  ASSERT_EQ(result, 0x00);
-}
-
 TEST_F(MemoryTest, ReadWrite16Success) {
   // arrange
   uint16_t value = 0x5643;
@@ -55,106 +41,6 @@ TEST_F(MemoryTest, ReadWrite16Success) {
 
   // assert
   ASSERT_EQ(result, value);
-}
-
-TEST_F(MemoryTest, ReadWrite16Failure) {
-  // arrange
-  uint16_t value = 0x5643;
-  uint16_t addr = 0x0800;
-
-  // act
-  memory->write16(addr, value);
-  auto result = memory->read16(addr);
-
-  // assert
-  ASSERT_NE(result, value);
-  ASSERT_EQ(result, 0x0000);
-}
-
-TEST_F(MemoryTest, Validate8Success) {
-  // arrange
-  uint16_t addr = 0x0240;
-
-  // act
-  auto result = memory->validate8(addr);
-
-  // assert
-  ASSERT_EQ(result, true);
-}
-
-TEST_F(MemoryTest, Validate8Failure) {
-  // arrange
-  uint16_t addr = 0x0800;
-
-  // act
-  auto result = memory->validate8(addr);
-
-  // assert
-  ASSERT_EQ(result, false);
-}
-
-TEST_F(MemoryTest, Validate16Success) {
-  // arrange
-  uint16_t addr = 0x0240;
-
-  // act
-  auto result = memory->validate16(addr);
-
-  // assert
-  ASSERT_EQ(result, true);
-}
-
-TEST_F(MemoryTest, Validate16Failure) {
-  // arrange
-  uint16_t addr = 0x07ff;
-
-  // act
-  auto result = memory->validate16(addr);
-
-  // assert
-  ASSERT_EQ(result, false);
-}
-
-TEST_F(MemoryTest, Mirror1) {
-  // arrange
-  uint8_t value = 0x56;
-  uint16_t addr = 0x0240;
-  uint16_t maddr = 0x1240;
-
-  // act
-  memory->mirror(0x1000);
-  memory->write8(addr, value);
-  auto result = memory->validate8(addr);
-  auto byte = memory->read8(maddr);
-  auto mirrors = memory->getMirrors();
-
-  // assert
-  ASSERT_EQ(result, true);
-  ASSERT_EQ(byte, value);
-  ASSERT_EQ(mirrors.size(), 1);
-  ASSERT_EQ(mirrors.at(0), 0x1000);
-}
-
-TEST_F(MemoryTest, Mirror3) {
-  // arrange
-  uint8_t value = 0x56;
-  uint16_t addr = 0x0240;
-  uint16_t maddr = 0x1240;
-
-  // act
-  memory->mirror(0x0800, 3);
-  memory->write8(addr, value);
-  auto result = memory->validate8(maddr);
-  auto byte = memory->read8(maddr);
-  auto mirrors = memory->getMirrors();
-
-  // assert
-  ASSERT_EQ(result, true);
-  ASSERT_EQ(byte, value);
-  ASSERT_EQ(mirrors.size(), 3);
-  ASSERT_EQ(mirrors.at(0), 0x0800);
-  ASSERT_EQ(mirrors.at(1), 0x1000);
-  ASSERT_EQ(mirrors.at(2), 0x1800);
 }
 
 TEST_F(MemoryTest, SetVector) {

@@ -129,8 +129,8 @@ int main() {
   uint8_t color = rand() % 8;
   memory->write8(RANDOM_ADDR, color);
   auto bus = make_shared<Bus>();
-  bus->add(memory);
-  auto cpu = make_shared<CPU>(bus);
+  bus->connect(memory);
+  auto cpu = make_shared<CPU>(bus, true);
   cpu->reset();
 
   int32_t video[SCREEN_SIZE];
