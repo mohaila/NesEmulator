@@ -1,5 +1,6 @@
 #include "nes/cpu.hpp"
 #include "nes/memory.hpp"
+#include "nes/memorybus.hpp"
 #include "raylib.h"
 
 using std::make_shared;
@@ -128,7 +129,7 @@ int main() {
   memory->write16(RESET_PROC_ADDR, PROGRAM_ADDR);
   uint8_t color = rand() % 8;
   memory->write8(RANDOM_ADDR, color);
-  auto bus = make_shared<Bus>();
+  auto bus = make_shared<MemoryBus>();
   bus->connect(memory);
   auto cpu = make_shared<CPU>(bus, true);
   cpu->reset();
@@ -138,7 +139,7 @@ int main() {
   // Main game loop
   while (!WindowShouldClose()) {
     // Update
-    cpu->clock();
+    cpu->clock(true);
     handleKeys(memory);
     getScreen(memory, video);
     // Draw

@@ -1,8 +1,7 @@
-#include "nes/bus.hpp"
-
 #include <gtest/gtest.h>
 
 #include "nes/memory.hpp"
+#include "nes/memorybus.hpp"
 
 using std::make_shared;
 using std::shared_ptr;
@@ -16,7 +15,7 @@ class BusTest : public Test {
  protected:
   void SetUp() override {
     memory = make_shared<Memory>(0x0000, 0x07ff);
-    bus = make_shared<Bus>();
+    bus = make_shared<MemoryBus>();
     bus->connect(memory);
   }
 

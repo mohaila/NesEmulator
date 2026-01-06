@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include "nes/memory.hpp"
+#include "nes/memorybus.hpp"
 
 using std::make_shared;
 using std::shared_ptr;
@@ -18,7 +18,7 @@ class CPUTest : public Test {
 
   void SetUp() override {
     memory = make_shared<Memory>(0x0000, 0xffff);
-    bus = make_shared<Bus>();
+    bus = make_shared<MemoryBus>();
     bus->connect(memory);
     cpu = make_shared<CPU>(bus);
   }

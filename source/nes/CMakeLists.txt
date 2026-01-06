@@ -1,5 +1,5 @@
 set(TARGET Nes)
-set(SRC device.cpp memory.cpp cpu.cpp)
+set(SRC device.cpp memory.cpp cpu.cpp memorybus.cpp)
 
 add_library(${TARGET} STATIC ${SRC})
 target_include_directories(${TARGET} PRIVATE 
